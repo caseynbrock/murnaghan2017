@@ -71,6 +71,25 @@ def test_run_energy_calculations_abinit():
     m.run_energy_calculations(abc, angles, template_file, energy_driver)
     assert False
 
+def test_prim_vec_from_angles_hex():
+    energy_driver='dummy'
+    template_file = 'dummy'
+    abc = []
+    angles=[90, 90, 120]
+    sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, angles=angles)
+    correct_vec = np.array([[1,0,0],[-0.5, np.sqrt(3)/2, 0], [0,0,1]])
+    assert np.isclose(sweep._prim_vec_from_angles(), correct_vec).all()
+
+def test_prim_vec_from_angles_tet():
+    energy_driver='dummy'
+    template_file = 'dummy'
+    abc = []
+    angles=[90, 90, 90]
+    sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, angles=angles)
+    correct_vec = np.array([[1,0,0],[0,1,0], [0,0,1]])
+    assert np.isclose(sweep._prim_vec_from_angles(), correct_vec).all()
+
+
 def test_abinit_get_energy():
     assert False
 

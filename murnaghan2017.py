@@ -36,13 +36,11 @@ def main():
     # maybe_plot_or_something()
 
 
-class LatticeParamterSweep():
-    def __init__(self, energy_driver, abc_guess, max_pert, N, 
-                 angles=None, prim_vec=None, two_dim=None):
+class LatticeParameterSweep():
+    def __init__(self, energy_driver, template_file, abc, angles=None, prim_vec=None, two_dim=False):
         self.energy_driver = energy_driver
-        self.abc_guess = abc_guess
-        self.max_pert = max_pert
-        self.N = N
+        self.template_file = template_file
+        self.abc = np.array(abc)
         self.two_dim = two_dim
         
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
@@ -55,24 +53,29 @@ class LatticeParamterSweep():
             self.prim_vec = np.array(prim_vec)
             self.angles = angles # angles don't need to be calculated
         else:
-            self.angles = angles
-            self.prim_vec = prim_vec_from_angles()
+            self.angles = np.array(angles)
+            #self.prim_vec = prim_vec_from_angles()
 
-        def prim_vec_from_angles(self):
-            alp = self.angles[0]
-            bet = self.angles[1]
-            gam = self.angles[2]
-            b1 = np.cos(gam)
-            b2 = np.sin(gam)
-            c1 = np.cos(bet)
-            c2 = (np.cos(alp) - b1*c1)/b2
-            c3 = np.sqrt(1-c1**2-c2**2)
-            ahat = [1,0,0]
-            bhat = [b1, b2, 0]
-            chat = [c1, c2, c3]
-            return np.array(ahat, bhat, chat)
+    def _prim_vec_from_angles(self):
+        """
+        Given angles between lattice vectors, returns unit vectors
 
-def generate_lattice_constants(abc_guess, max_pert, N, two_dim=False):
+        I chose ahat to be [1,0,0], and bhat to be in the x-y plane.
+        """
+        alp = self.angles[0]*np.pi/180.
+        bet = self.angles[1]*np.pi/180.
+        gam = self.angles[2]*np.pi/180.
+        b1 = np.cos(gam)
+        b2 = np.sin(gam)
+        c1 = np.cos(bet)
+        c2 = (np.cos(alp) - b1*c1)/b2
+        c3 = np.sqrt(1-c1**2-c2**2)
+        ahat = [1,0,0]
+        bhat = [b1, b2, 0]
+        chat = [c1, c2, c3]
+        return np.array([ahat, bhat, chat])
+
+def generate_lattice_constants(lattice_parameter_sweep):
     """
     generates an Nx3 numpy array containing the three lattice constants for each energy calculation. 
     Each value will range from (1-max_pert)*abc_guess[i] to (1+max_pert)*abc_guess[i].
