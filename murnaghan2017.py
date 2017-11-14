@@ -74,7 +74,7 @@ def run_energy_calculations(abc, angles, energy_driver):
         # preprocess_file(s, angles, template_file, energy_driver)
         # run_dft
         os.chdir(main_dir)
-        energy_list_hartree.append(abinit_get_energy())
+        #energy_list_hartree.append(abinit_get_energy())
     return energy_list_hartree
 
 def fit_to_murnaghan(vol_array, E_array):
