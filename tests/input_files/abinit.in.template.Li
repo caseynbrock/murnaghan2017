@@ -1,0 +1,23 @@
+# bulk Li
+# tsmear 0.02 eV
+
+#Definition of the k-point grid
+kptopt 1          # Option for the automatic generation of k points
+ngkpt 1 1 1
+                         
+#Definition of the planewave basis set
+ecut 800 eV
+pawecutdg 2400 eV  
+
+#Definition of the SCF procedure
+nstep 100      # Maximal number of SCF cycles
+toldfe 1.0d-5  # for quick test
+#toldfe 1.0d-10  # recommendation of documentation
+
+#Definition of the atoms
+ntypat 1
+natom  1  
+znucl  3    
+typat  1 
+xred
+   0. 0. 0. 
