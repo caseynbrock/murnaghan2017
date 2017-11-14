@@ -17,8 +17,9 @@ def main():
     abc = generate_lattice_constants(abc_guess, max_pert, N, two_dim=True)
     """
     # User inputs
-    angles = [90, 90,120]  # lattice vector angles: alpha, beta, gamma
     abc_guess = [4, 4, 6]  # lattice parameters guess: a, b, c 
+    angles = [90, 90,120]  # lattice vector angles: alpha, beta, gamma
+    prim_vec = [[1,1,-1], [-1,1,1], [1,-1,1]]  # lattice vector angles: alpha, beta, gamma
     max_pert = 0.05  # max perturbation of lattice parameters
     N = 7 # number of steps in lattice parameter sweep
     energy_driver = 'abinit'  # dft code to use
@@ -54,7 +55,7 @@ def generate_lattice_constants(abc_guess, max_pert, N, two_dim=False):
     return abc
 
 
-def run_energy_calculations(abc, angles, energy_driver):
+def run_energy_calculations(abc, angles, template_file, energy_driver):
     """
     Uses DFT code to calculate energy at each of the lattice constants specified.
 
@@ -71,7 +72,7 @@ def run_energy_calculations(abc, angles, energy_driver):
         dir_name = 'workdir.'+str(i)
         os.mkdir(dir_name)
         os.chdir(dir_name)
-        # preprocess_file(s, angles, template_file, energy_driver)
+        preprocess_file(s, angles, template_file, energy_driver)
         # run_dft
         os.chdir(main_dir)
         #energy_list_hartree.append(abinit_get_energy())

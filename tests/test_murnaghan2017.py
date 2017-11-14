@@ -5,6 +5,9 @@ import numpy as np
 import os
 import murnaghan2017 as m
 
+test_dir = os.path.dirname(os.path.realpath(__file__))
+input_dir = os.path.join(test_dir, 'input_files')
+
 def test_preprocess_file_bad():
     """
     entering bad name for energy driver raises value error
@@ -18,13 +21,14 @@ def test_preprocess_file_abinit():
     
     not very robust since different number format would cause a fail
     """
-    template_file = 'abinit.in.template.example'
+    template_file = os.path.join(input_dir, 'abinit.in.template.example')
+    correct_file = os.path.join(input_dir, 'abinit.in.correct')
     # preprocess
     s = [0.1, 0.2, 0.3]
     ang = [90, 90, 120]
     m.preprocess_file(s, ang, template_file, 'abinit')
-    # compare writetn abinit file with correct input file
-    with open('abinit.in.correct') as f1, open('abinit.in') as f2:
+    # compare written abinit file with correct input file
+    with open(correct_file) as f1, open('abinit.in') as f2:
         assert f1.readlines() == f2.readlines()
     os.remove('abinit.in') 
 
@@ -58,11 +62,13 @@ def test_run_energy_calculations_abinit():
     
     Requires abinit set up correctly
     """
+    template_file = os.path.join(input_dir, 'abinit.in.template.Li')
     abc = np.array([[a*pert for a in [4,4,6]] for pert in [0.95, 1, 1.05]])
     print abc
     angles=[90, 90, 90]
     energy_driver='abinit'
-    m.run_energy_calculations(abc, angles, energy_driver)
+    os.getcwd()
+    m.run_energy_calculations(abc, angles, template_file, energy_driver)
     assert False
 
 def test_abinit_get_energy():
