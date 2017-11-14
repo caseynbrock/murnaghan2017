@@ -4,7 +4,6 @@ import os
 import sys
 import glob
 import numpy as np
-sys.dont_write_bytecode = True
 
 def main():
     """
