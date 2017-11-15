@@ -247,6 +247,10 @@ def test_calc_unit_cell_volume_6():
 def test_fit_to_murnaghan():
     assert False
 
+def test_murnaghan_equation():
+    parameters = [1, 2, 3, 4]
+    vol_list = [0.1, 1, 10]
+    assert np.isclose(m.murnaghan_equation(parameters, vol_list), [2130.4, 19, 3.88]).all()
 
 def test_run_energy_calculations_abinit2():
     """

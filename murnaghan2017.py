@@ -205,26 +205,54 @@ class LatticeParameterSweep(object):
         """
         pass
 
-def fit_to_murnaghan(vol_array, E_array):
-    """fts energy vs volume data to murnaghan equation of state"""   
-    # fit a parabola to the data to get educated guesses
-    a, b, c = np.polyfit(vol_array, E_array, 2)
-    # V0 = minimum energy volume, or where dE/dV=0
-    # E = aV^2 + bV + c
-    # dE/dV = 2aV + b = 0
-    # V0 = -b/2a
-    # E0 is the minimum energy, which is:
-    # E0 = aV0^2 + bV0 + c
-    # B is equal to V0*d^2E/dV^2, which is just 2a*V0
-    # and from experience we know Bprime_0 is usually a small number like 4
-    V0_guess = -b/(2*a)
-    E0_guess = a*V0_guess**2. + b*V0_guess + c
-    B0_guess = 2.*a*V0_guess
-    BP_guess = 4.
-    murnpars_guess = [E0_guess, B0_guess, BP_guess, V0_guess]
-    murnpars = leastsq(objective, murnpars_guess, args=(E_array,vol_array))
-    return murnpars
- 
+class MurnaghanFit(object):
+    """fits and""" 
+    def __init__(self, vol_array, E_array):
+        self.vol_array = vol_array
+        self.E_array = E_array
+        murnpars = self._fit_to_murnaghan()
+        self.E0 = murnpars[0]
+        self.B0 = murnpars[1]
+        self.BP = murnpars[2]
+        self.V0 = murnpars[3]
+
+    def _fit_to_murnaghan(vol_array, E_array):
+        """fts energy vs volume data to murnaghan equation of state"""   
+        # fit a parabola to the data to get educated guesses
+        a, b, c = np.polyfit(vol_array, E_array, 2)
+        # V0 = minimum energy volume, or where dE/dV=0
+        # E = aV^2 + bV + c
+        # dE/dV = 2aV + b = 0
+        # V0 = -b/2a
+        # E0 is the minimum energy, which is:
+        # E0 = aV0^2 + bV0 + c
+        # B is equal to V0*d^2E/dV^2, which is just 2a*V0
+        # and from experience we know Bprime_0 is usually a small number like 4
+        V0_guess = -b/(2*a)
+        E0_guess = a*V0_guess**2. + b*V0_guess + c
+        B0_guess = 2.*a*V0_guess
+        BP_guess = 4.
+        murnpars_guess = [E0_guess, B0_guess, BP_guess, V0_guess]
+        murnpars = leastsq(_objective, murnpars_guess, args=(E_array,vol_array))
+        return murnpars
+    
+    def _objective(pars,y,x):
+        err = y -  murnaghan_equation(pars,x)
+        return err
+
+
+def murnaghan_equation(parameters, vol):
+    """murnaghan equation of state"""
+    # given iterables of parameters and volumes, return a numpy array of energies.
+    # equation From PRB 28,5480 (1983)
+    vol = np.array(vol)
+    E0 = parameters[0]
+    B0 = parameters[1]
+    BP = parameters[2]
+    V0 = parameters[3]
+    E = E0 + B0*vol/BP*(((V0/vol)**BP)/(BP-1)+1) - V0*B0/(BP-1.)
+    return E
+    
 
 def generate_lattice_constants(abc_guess, max_pert, N, two_dim=False):
     """
