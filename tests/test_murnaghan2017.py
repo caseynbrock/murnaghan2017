@@ -3,6 +3,7 @@ sys.dont_write_bytecode = True
 import pytest
 import numpy as np
 import os
+import shutil
 import murnaghan2017 as m
 
 test_dir = os.path.dirname(os.path.realpath(__file__))
@@ -119,20 +120,6 @@ def test_generate_lattice_constants_2d():
         [0.5, 1., 2.], [0.5125, 1.025, 2], [0.525, 1.05, 2]])
     assert (abc == abc_correct).all()
     
-def test_run_energy_calculations_abinit():
-    """
-    sets up files and runs abinit for each lattice constant
-    
-    Requires abinit set up correctly
-    """
-    template_file = os.path.join(input_dir, 'abinit.in.template.Li')
-    abc = np.array([[a*pert for a in [4,4,6]] for pert in [0.95, 1, 1.05]])
-    print abc
-    angles=[90, 90, 90]
-    energy_driver='abinit'
-    os.getcwd()
-    m.run_energy_calculations(abc, angles, template_file, energy_driver)
-    assert False
 
 def test_prim_vec_from_angles_hex():
     energy_driver='dummy'
@@ -152,9 +139,50 @@ def test_prim_vec_from_angles_tet():
     correct_vec = np.array([[1,0,0],[0,1,0], [0,0,1]])
     assert np.isclose(sweep._prim_vec_from_angles(), correct_vec).all()
 
+def test_get_energy_bad():
+    """
+    entering bad name for energy driver raises value error
+    """
+    energy_driver = 'dummy'
+    s_dummy = [1,2,3]
+    sweep = m.LatticeParameterSweep(energy_driver, '', [], prim_vec=[])
+    with pytest.raises(ValueError):
+        sweep.get_energy()
 
-def test_abinit_get_energy():
-    assert False
+def test_abinit_get_energy_single():
+    """When only single etotal reported (typical case), returns etotal in Hartree"""
+    energy_driver='abinit'
+    template_file = None
+    abc = None
+    prim_vec = 1
+    sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
+    os.chdir(test_dir) 
+    shutil.copy(os.path.join(input_dir, 'log.example'), 'log')
+    E = sweep.get_energy()
+    os.remove('log')
+    os.chdir('..')
+    assert np.isclose(E, -6.1395717098)
+    
+
+def test_abinit_get_energy_multiple():
+    """When only single etotal reported (typical case), returns etotal in Hartree"""
+    energy_driver='abinit'
+    template_file = None
+    abc = None
+    prim_vec = 1
+    sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
+    os.chdir(test_dir) 
+    shutil.copy(os.path.join(input_dir, 'log.structurerelax.example'), 'log')
+    E = sweep.get_energy()
+    os.remove('log')
+    os.chdir('..')
+    assert np.isclose(E, -7.3655263854)
+    
+
+
+#     shutil.copy(os.path.join(input_dir, 'log.structurerelax.example'), '.')
+
+
 
 def test_run_abinit():
     assert False
@@ -162,3 +190,16 @@ def test_run_abinit():
 def test_fit_to_murnaghan():
     assert False
 
+def test_run_energy_calculations_abinit():
+    """
+    sets up files and runs abinit for each lattice constant
+    
+    Requires abinit set up correctly
+    """
+    energy_driver = 'abinit'
+    template_file = os.path.join(input_dir, 'abinit.in.template.Li')
+    abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 1, 1.05]])
+    prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
+    sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
+    sweep.run_energy_calculations()
+    raise Exception('Need to finish test after other methods written')

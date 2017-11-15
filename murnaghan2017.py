@@ -102,7 +102,7 @@ class LatticeParameterSweep():
                 f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec[1]]) + '\n')
                 f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec[2]]) + '\n')
 
-    def run_energy_calculations(abc, angles, template_file, energy_driver):
+    def run_energy_calculations(self):
         """
         Uses DFT code to calculate energy at each of the lattice constants specified.
     
@@ -115,15 +115,37 @@ class LatticeParameterSweep():
         # run dft calculations and return calculated energies
         main_dir = os.getcwd()
         energy_list_hartree = []
-        for i,s in enumerate(abc):
+        for i,s in enumerate(self.abc):
             dir_name = 'workdir.'+str(i)
-            os.mkdir(dir_name)
+            shutil.copytree('templatedir', dir_name)
             os.chdir(dir_name)
-            preprocess_file(s, angles, template_file, energy_driver)
+            self.preprocess_file(s)
             # run_dft
             os.chdir(main_dir)
             #energy_list_hartree.append(abinit_get_energy())
         return energy_list_hartree
+
+    def get_energy(self):
+        """
+        wraps specific get energy methods for different codes
+        """
+        if self.energy_driver=='abinit':
+            return self._get_energy_abinit()
+        else:
+            raise ValueError('Unknown energy driver specified')
+
+    def _get_energy_abinit(self):
+        """
+        reads total energy from abinit log file by finding line with the word etotal.
+        If there are multiple etotals reported (maybe in case of sructure relaxation),
+        only the final etotal is returned.
+        """
+        with open('log', 'r') as log_fin:
+            for line in log_fin.readlines():
+                if ' etotal ' in line:
+                    etotal_line = line
+        abinit_energy_hartree = np.float(etotal_line.split()[1])
+        return abinit_energy_hartree
     
     def fit_to_murnaghan(vol_array, E_array):
             ### first, fit a parabola to the data
