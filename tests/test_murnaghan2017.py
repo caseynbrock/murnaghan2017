@@ -213,6 +213,36 @@ def test_abinit_get_energy_multiple():
     os.remove('log')
     os.chdir('..')
     assert np.isclose(E, -7.3655263854)
+
+def test_calc_unit_cell_volume():
+    prim_vec = [[1,0,0], [0,1,0], [0,0,1]]
+    sweep = m.LatticeParameterSweep(None, None, [], prim_vec=prim_vec)
+    assert np.isclose(sweep._calc_unit_cell_volume([1,1,1]),  1.)
+    
+def test_calc_unit_cell_volume_2():
+    prim_vec = [[2,0,0], [0,1,0], [0,0,1]]
+    sweep = m.LatticeParameterSweep(None, None, [], prim_vec=prim_vec)
+    assert np.isclose(sweep._calc_unit_cell_volume([2,2,2]),  16.)
+    
+def test_calc_unit_cell_volume_3():
+    prim_vec = [[1,1,0], [0,1,1], [1,0,1]]
+    sweep = m.LatticeParameterSweep(None, None, [], prim_vec=prim_vec)
+    assert np.isclose(sweep._calc_unit_cell_volume([1,1,1]),  2.)
+    
+def test_calc_unit_cell_volume_4():
+    prim_vec = [[1,1,0], [0,1,1], [1,0,1]]
+    sweep = m.LatticeParameterSweep(None, None, [], prim_vec=prim_vec)
+    assert np.isclose(sweep._calc_unit_cell_volume([1,2,3]),  12.)
+    
+def test_calc_unit_cell_volume_5():
+    angles = [90,90,90]
+    sweep = m.LatticeParameterSweep(None, None, [], angles=angles)
+    assert np.isclose(sweep._calc_unit_cell_volume([1,2,3]),  6.)
+    
+def test_calc_unit_cell_volume_6():
+    angles = [90,90,120]
+    sweep = m.LatticeParameterSweep(None, None, [], angles=angles)
+    assert np.isclose(sweep._calc_unit_cell_volume([2,2,10]),  20*np.sqrt(3))
     
 def test_fit_to_murnaghan():
     assert False

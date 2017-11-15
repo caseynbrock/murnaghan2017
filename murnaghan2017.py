@@ -55,7 +55,7 @@ class LatticeParameterSweep(object):
             self.angles = angles # angles don't need to be calculated
         else:
             self.angles = np.array(angles)
-            #self.prim_vec = prim_vec_from_angles()
+            self.prim_vec = self._prim_vec_from_angles()
 
     def _prim_vec_from_angles(self):
         """
@@ -75,6 +75,18 @@ class LatticeParameterSweep(object):
         bhat = [b1, b2, 0]
         chat = [c1, c2, c3]
         return np.array([ahat, bhat, chat])
+    
+    def _calc_unit_cell_volume(self, s):
+        """
+        Calculate volume of unit cell from primitive vectors.
+        u dot (v cross w) where u,v,w are the prmitive vectors
+        u, v, w are s[i]*prim_vec[i]
+        """        
+        uvw = [s[i]*self.prim_vec[i] for i in range(3)]
+        vcrossw = np.cross(uvw[1], uvw[2])
+        volume = np.dot(uvw[0],vcrossw)
+        return volume
+
 
     def preprocess_file(self, s):
         """
