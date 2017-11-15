@@ -28,6 +28,7 @@ def main():
     # Set up and run lattice parameter sweep
     abc = generate_lattice_constants(abc_guess, max_pert, N)  # or create abc manually
     raw_energy_data = run_energy_calculations(abc, angles, energy_driver)
+    
     write_results(raw_energy_data)
 
     # Fit energy/volume data to Murnaghan equation of state
@@ -36,13 +37,14 @@ def main():
     # optionally, plot data
     # maybe_plot_or_something()
 
-
 class LatticeParameterSweep(object):
     def __init__(self, energy_driver, template_file, abc, angles=None, prim_vec=None, two_dim=False):
         self.energy_driver = energy_driver
         self.template_file = template_file
         self.abc = np.array(abc)
         self.two_dim = two_dim
+        self.vol_array = None
+        self.E_array = None
         
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
         # or angles (useful for hex)
@@ -181,32 +183,14 @@ class LatticeParameterSweep(object):
         # read energy from log
         energy = abinit_get_energy()
     
-    def fit_to_murnaghan(vol_array, E_array):
-            ### first, fit a parabola to the data
-            # y = ax^2 + bx + c
-            a, b, c = np.polyfit(vol_array, E_array, 2)
-            #
-            # the parabola does not fit the data very well, but we can use it to get
-            # some analytical guesses for other parameters.
-            # V0 = minimum energy volume, or where dE/dV=0
-            # E = aV^2 + bV + c
-            # dE/dV = 2aV + b = 0
-            # V0 = -b/2a
-            # E0 is the minimum energy, which is:
-            # E0 = aV0^2 + bV0 + c
-            # B is equal to V0*d^2E/dV^2, which is just 2a*V0
-            # and from experience we know Bprime_0 is usually a small number like 4
-            V0_guess = -b/(2*a)
-            E0_guess = a*V0_guess**2. + b*V0_guess + c
-            B0_guess = 2.*a*V0_guess
-            BP_guess = 4.
-    
-            murnpars_guess = [E0_guess, B0_guess, BP_guess, V0_guess]
-            murnpars = leastsq(objective, murnpars_guess, args=(E_array,vol_array))
-            return murnpars
+    def fit_sweep_to_murnaghan(self):
+        """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
+        if self.vol_array is None:
+            raise ValueError('No volume data!')
+        if self.E_array is None:
+            raise ValueError('No energy data!')
+        return fit_to_murnaghan(self.vol_array, self.E_array)
 
-   
-        
     def write_results(raw_energy_data):
         """ 
         writes raw energy data from dft runs.
@@ -221,6 +205,26 @@ class LatticeParameterSweep(object):
         """
         pass
 
+def fit_to_murnaghan(vol_array, E_array):
+    """fts energy vs volume data to murnaghan equation of state"""   
+    # fit a parabola to the data to get educated guesses
+    a, b, c = np.polyfit(vol_array, E_array, 2)
+    # V0 = minimum energy volume, or where dE/dV=0
+    # E = aV^2 + bV + c
+    # dE/dV = 2aV + b = 0
+    # V0 = -b/2a
+    # E0 is the minimum energy, which is:
+    # E0 = aV0^2 + bV0 + c
+    # B is equal to V0*d^2E/dV^2, which is just 2a*V0
+    # and from experience we know Bprime_0 is usually a small number like 4
+    V0_guess = -b/(2*a)
+    E0_guess = a*V0_guess**2. + b*V0_guess + c
+    B0_guess = 2.*a*V0_guess
+    BP_guess = 4.
+    murnpars_guess = [E0_guess, B0_guess, BP_guess, V0_guess]
+    murnpars = leastsq(objective, murnpars_guess, args=(E_array,vol_array))
+    return murnpars
+ 
 
 def generate_lattice_constants(abc_guess, max_pert, N, two_dim=False):
     """

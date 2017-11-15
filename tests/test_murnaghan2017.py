@@ -268,4 +268,5 @@ def test_run_energy_calculations_abinit2():
         prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
         sweep.run_energy_calculations()
+        sweep.fit_sweep_to_murnaghan()
     pass # just gonna assume if it gets to here without error, then nothing is wrong
