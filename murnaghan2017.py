@@ -3,6 +3,7 @@ import shutil
 import os 
 import sys
 import glob
+import subprocess
 import numpy as np
 
 def main():
@@ -36,7 +37,7 @@ def main():
     # maybe_plot_or_something()
 
 
-class LatticeParameterSweep():
+class LatticeParameterSweep(object):
     def __init__(self, energy_driver, template_file, abc, angles=None, prim_vec=None, two_dim=False):
         self.energy_driver = energy_driver
         self.template_file = template_file
@@ -120,11 +121,24 @@ class LatticeParameterSweep():
             shutil.copytree('templatedir', dir_name)
             os.chdir(dir_name)
             self.preprocess_file(s)
-            # run_dft
+            self.run_dft()
+            energy_list_hartree.append(self.get_energy())
             os.chdir(main_dir)
-            #energy_list_hartree.append(abinit_get_energy())
         return energy_list_hartree
 
+
+    def run_dft(self):
+        """
+        runs dft code in current directory
+        """
+        if self.energy_driver=='abinit':
+            with open('log', 'w') as log_fout, open('files','r') as files_fin:
+                #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
+                subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
+        else:
+            raise ValueError('Unknown energy driver specified')
+        
+        
     def get_energy(self):
         """
         wraps specific get energy methods for different codes
@@ -146,6 +160,14 @@ class LatticeParameterSweep():
                     etotal_line = line
         abinit_energy_hartree = np.float(etotal_line.split()[1])
         return abinit_energy_hartree
+    
+    def run_abinit():
+        #call abinit
+        with open('log', 'w') as log_fout, open('files','r') as files_fin:
+            #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
+            subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
+        # read energy from log
+        energy = abinit_get_energy()
     
     def fit_to_murnaghan(vol_array, E_array):
             ### first, fit a parabola to the data
@@ -171,32 +193,19 @@ class LatticeParameterSweep():
             murnpars = leastsq(objective, murnpars_guess, args=(E_array,vol_array))
             return murnpars
 
-    def run_abinit():
-        #call abinit
-        with open('log', 'w') as log_fout, open('files','r') as files_fin:
-            #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
-            subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
-     
-        # read energy from log
-        energy = abinit_get_energy()
-    
-    def abinit_get_energy():
-        with open('log', 'r') as log_fin:
-            for line in log_fin.readlines():
-                if ' etotal ' in line:
-                    abinit_energy_hartree = np.float(line.split()[1])
-        return abinit_energy_hartree
-    
-    def read_energy_results():
-        """
-        gets total energy from abinit output in all wrokdirs
-        """
-        pass
+   
         
     def write_results(raw_energy_data):
         """ 
         writes raw energy data from dft runs.
-        The raw data input should have a,b,c,E for each run
+        The header should contain primitive vectors, and angles if specified
+        The tabulated data should have 
+        a, b, c, L_a, B, C, V, E_Ha, E_Ry, E_eV for each run
+        where a,b,c are scaling factors for primitve vectors (bohr)
+        L_a, L_b, L_c, are the lenghts of primitve vectors (same as a,b,c in some cases) (bohr)
+        V is the volume of the unit cell (Bohr^3)
+        E_Ha is the total energy in Hartree,
+        E_eV is the total energy in eV
         """
         pass
 
