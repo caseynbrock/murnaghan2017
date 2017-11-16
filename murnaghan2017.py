@@ -46,6 +46,7 @@ class LatticeParameterSweep(object):
         self.two_dim = two_dim
         self.volumes = None 
         self.energies_hartree = None
+        self.murnaghan_fit = None
         
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
         # or angles (useful for hex)
@@ -123,6 +124,7 @@ class LatticeParameterSweep(object):
         Uses DFT code to calculate energy at each of the lattice constants specified.
     
         For each lattice constant in sweep, sets up directory and runs dft code in that directory.
+        this method sets instance attirbutes: volumes, energies_hartree, murnaghan_fit
         """  
         # remove old work directories
         for f in glob.glob('workdir.*'):
@@ -139,11 +141,14 @@ class LatticeParameterSweep(object):
             self.run_dft()
             energy_list_hartree.append(self.get_energy())
             os.chdir(main_dir)
+        # set instance variables
         self.volumes = np.array([self._calc_unit_cell_volume(s) for s in self.abc])
         self.energies_hartree = np.array(energy_list_hartree)
+        self.murnaghan_fit = self._fit_sweep_to_murnaghan()
+        
+        # write raw data and murnaghan fit data to files
         self._write_energy_data()
-        self._fit_sweep_to_murnaghan()
-        return self.volumes, self.energies_hartree
+        self.murnaghan_fit.write_murnaghan_data()
 
 
     def run_dft(self):
@@ -225,6 +230,8 @@ class LatticeParameterSweep(object):
                 fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
                         %(a_scale, b_scale, c_scale, V, E_Ha, E_eV))
 
+
+
 class MurnaghanFit(object):
     """
     fits energy vs volume data to murnaghan equation of state
@@ -263,6 +270,28 @@ class MurnaghanFit(object):
     def _objective(self,pars,y,x):
         err = y -  murnaghan_equation(pars,x)
         return err
+    
+    def write_murnaghan_data(self):
+        """writes fitted murnaghan paramters to file with some useful units""" 
+        # # convert results to other units
+        # a_angstroms = a_0 * 0.52917725
+        # B_0_gpa = B_0 * 1.8218779e-30 / 5.2917725e-11 / \
+        #           4.8377687e-17 / 4.8377687e-17 * 1.e-9
+    
+        with open('murnaghan_parameters.dat', 'w') as f:
+            f.write('# everything in rydberg atomic units unless specified\n')
+            # f.write('E_0: %.9f\n'  %E_0)
+            # f.write('B_0 (bulk modulus): %.9g\n' %B_0)
+            # f.write('B_0p: %.9f\n' %B_0p)
+            # f.write('V_0: %.9f\n' %V_0)
+            # f.write('\n')
+            # f.write('s_0, lattice vector scale: %.9f\n' %s_0)
+            # f.write('a_0, lattice constant: %.9f\n' %a_0)
+            # f.write('\n')
+            # f.write('B_0 (GPa): %.9f\n' %B_0_gpa)
+            # f.write('a_0 (angstroms): %.9f\n' %a_angstroms)
+            # f.write('\n')
+            # f.write('RMS error: %.9g\n' %rms_error)
 
 
 def murnaghan_equation(parameters, vol):

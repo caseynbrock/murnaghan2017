@@ -276,7 +276,11 @@ def test_integration_abinit():
     """
     lattice paramter sweep and murnaghan fitting should run correctly
     
-    Requires abinit set up correctly
+    Requires abinit set up correctly. Also, this test is fragile because
+    different abinit versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new abinit outputs.
+    If the energy values are wrong, the murnaghan paramters will be too.
     """
     with TemporaryDirectory() as tmp_dir:
         # set up example input files in temporary directory
@@ -290,9 +294,18 @@ def test_integration_abinit():
         abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 0.975, 1, 1.025, 1.05]])
         prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
-        vol, E = sweep.run_energy_calculations()
-    assert np.isclose(vol, [15.40574269, 16.65427268, 17.9685, 19.3501092, 20.80078481]).all()
-    assert np.isclose(E, [-5.93211143, -6.04145629, -6.13957171, -6.22787361, -6.30747694]).all()
-    assert os.path.exists('energies.dat')
+        sweep.run_energy_calculations()
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('murnaghan_parameters.dat')
+
+    # assert volumes and energies are correct
+    assert np.isclose(sweep.volumes, [15.40574269, 16.65427268, 17.9685, 19.3501092, 20.80078481]).all()
+    assert np.isclose(sweep.energies_hartree, [-5.93211143, -6.04145629, -6.13957171, -6.22787361, -6.30747694]).all()
+    # assert murnaghan parameters are correct
+    assert np.isclose(sweep.murnaghan_fit.E0, -6.76174906082)
+    assert np.isclose(sweep.murnaghan_fit.B0, 0.0253966713811)
+    assert np.isclose(sweep.murnaghan_fit.BP, 1.71091944591)
+    assert np.isclose(sweep.murnaghan_fit.V0, 49.4869248327)
 
 
