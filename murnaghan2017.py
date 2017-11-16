@@ -141,6 +141,7 @@ class LatticeParameterSweep(object):
             os.chdir(main_dir)
         self.volumes = np.array([self._calc_unit_cell_volume(s) for s in self.abc])
         self.energies_hartree = energy_list_hartree
+        self._write_energy_data()
         return self.volumes, energy_list_hartree
 
 
@@ -196,17 +197,30 @@ class LatticeParameterSweep(object):
 
     def _write_energy_data(self):
         """ 
-        writes raw energy data from dft runs.
-        The header should contain primitive vectors, and angles if specified
-        The tabulated data should have 
-        a, b, c, L_a, B, C, V, E_Ha, E_Ry, E_eV for each run
+        Writes raw energy data from dft runs.
+
+        The header should contain primitive vectors. 
         where a,b,c are scaling factors for primitve vectors (bohr)
-        L_a, L_b, L_c, are the lenghts of primitve vectors (same as a,b,c in some cases) (bohr)
         V is the volume of the unit cell (Bohr^3)
-        E_Ha is the total energy in Hartree,
+        E_Ha is the total energy in Hartree
         E_eV is the total energy in eV
         """
-        pass
+        with open('energies.dat', 'w') as fout:
+            fout.write('# Note that a, b, and c are scales and need to be multiplied \n'+
+                       '# by unscaled primitive vectors prim_vec to get actual unit cell vectors\n')
+            fout.write('# prim_vec: '+str(self.prim_vec[0]) + '\n')
+            fout.write('#           '+str(self.prim_vec[1]) + '\n')
+            fout.write('#           '+str(self.prim_vec[2]) + '\n')
+            fout.write('# a (bohr),   b (bohr),   c (bohr),   V (bohr^3), E (Ha),     E(eV)\n')
+            for i in range(len(self.abc)):
+                a_scale = self.abc[i,0]
+                b_scale = self.abc[i,1]
+                c_scale = self.abc[i,2]
+                V = self.volumes[i] 
+                E_Ha = self.energies_hartree[i]
+                E_eV = E_Ha*27.21138602
+                fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
+                        %(a_scale, b_scale, c_scale, V, E_Ha, E_eV))
 
 class MurnaghanFit(object):
     """

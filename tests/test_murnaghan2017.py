@@ -261,6 +261,16 @@ def test_MurnaghanFit():
     assert np.isclose(testfit.BP, 2.997968514)
     assert np.isclose(testfit.V0, 42.487211639)
 
+def test_write_energy_data():
+    with TemporaryDirectory() as tmp_dir:
+        abc = [[0.95,0.95,2.9], [1,1,2], [1.1,1.1,2.2]]
+        prim_vec = [[1,1,0], [0,1,1], [np.sqrt(3),0,np.sqrt(3)/2]]
+        sweep = m.LatticeParameterSweep('', '', abc, prim_vec=prim_vec)
+        sweep.volumes = [1.234567890, 2.345678901, 3.456789012] # fake data
+        sweep.energies_hartree = [4.567890123, 5.678901234, 6.789012345] # fake data
+        sweep._write_energy_data()
+    pass
+    
 
 def test_run_energy_calculations_abinit():
     """
@@ -270,7 +280,6 @@ def test_run_energy_calculations_abinit():
     """
     with TemporaryDirectory() as tmp_dir:
         # set up example input files in temporary directory
-        os.chdir(tmp_dir)
         os.mkdir('templatedir')
         shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
                     os.path.join('templatedir', 'files'))
