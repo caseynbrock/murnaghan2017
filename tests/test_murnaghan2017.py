@@ -244,33 +244,42 @@ def test_calc_unit_cell_volume_6():
     sweep = m.LatticeParameterSweep(None, None, [], angles=angles)
     assert np.isclose(sweep._calc_unit_cell_volume([2,2,10]),  20*np.sqrt(3))
     
-def test_fit_to_murnaghan():
-    assert False
-
 def test_murnaghan_equation():
     parameters = [1, 2, 3, 4]
     vol_list = [0.1, 1, 10]
     assert np.isclose(m.murnaghan_equation(parameters, vol_list), [2130.4, 19, 3.88]).all()
 
-def test_run_energy_calculations_abinit2():
-    """
-    sets up files and runs abinit for each lattice constant
-    
-    Requires abinit set up correctly
-    """
-    with TemporaryDirectory() as tmp_dir:
-        # set up example input files in temporary directory
-        os.chdir(tmp_dir)
-        os.mkdir('templatedir')
-        shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
-                    os.path.join('templatedir', 'files'))
+# def test_run_energy_calculations_abinit2():
+#     """
+#     sets up files and runs abinit for each lattice constant
+#     
+#     Requires abinit set up correctly
+#     """
+#     with TemporaryDirectory() as tmp_dir:
+#         # set up example input files in temporary directory
+#         os.chdir(tmp_dir)
+#         os.mkdir('templatedir')
+#         shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
+#                     os.path.join('templatedir', 'files'))
+# 
+#         # run sweep  in tmp_dir
+#         energy_driver = 'abinit'
+#         template_file = os.path.join(input_dir, 'abinit.in.template.Li')
+#         abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 1, 1.05]])
+#         prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
+#         sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
+#         sweep.run_energy_calculations()
+#         sweep.fit_sweep_to_murnaghan()
+#     pass # just gonna assume if it gets to here without error, then nothing is wrong
 
-        # run sweep  in tmp_dir
-        energy_driver = 'abinit'
-        template_file = os.path.join(input_dir, 'abinit.in.template.Li')
-        abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 1, 1.05]])
-        prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
-        sweep.run_energy_calculations()
-        sweep.fit_sweep_to_murnaghan()
-    pass # just gonna assume if it gets to here without error, then nothing is wrong
+
+# everything in rydberg atomic units unless specified
+def test_MurnaghanFit():
+    vol_array = [34.598173802, 37.402118963, 40.353607000, 43.456421063, 46.714344303]
+    E_array = [-2.126149418, -2.130179030, -2.132207477, -2.132510305, -2.131351938]
+    testfit = m.MurnaghanFit(vol_array, E_array)
+    assert np.isclose(testfit.E0, -2.132584858)
+    assert np.isclose(testfit.B0, 0.00665127134)
+    assert np.isclose(testfit.BP, 2.997968514)
+    assert np.isclose(testfit.V0, 42.487211639)
+

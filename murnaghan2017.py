@@ -4,6 +4,7 @@ import os
 import sys
 import glob
 import subprocess
+from scipy.optimize import leastsq
 import numpy as np
 
 def main():
@@ -189,9 +190,9 @@ class LatticeParameterSweep(object):
             raise ValueError('No volume data!')
         if self.E_array is None:
             raise ValueError('No energy data!')
-        return fit_to_murnaghan(self.vol_array, self.E_array)
+        return MurnaghanFit(self.vol_array, self.E_array)
 
-    def write_results(raw_energy_data):
+    def write_energy_data(self):
         """ 
         writes raw energy data from dft runs.
         The header should contain primitive vectors, and angles if specified
@@ -206,17 +207,21 @@ class LatticeParameterSweep(object):
         pass
 
 class MurnaghanFit(object):
-    """fits and""" 
+    """
+    fits energy vs volume data to murnaghan equation of state
+
+    attributes E0, B0, BP, and V0 are parameters to murnaghan equation derived from fit
+    """ 
     def __init__(self, vol_array, E_array):
         self.vol_array = vol_array
         self.E_array = E_array
-        murnpars = self._fit_to_murnaghan()
+        murnpars = self._fit_to_murnaghan(self.vol_array, self.E_array)
         self.E0 = murnpars[0]
         self.B0 = murnpars[1]
         self.BP = murnpars[2]
         self.V0 = murnpars[3]
 
-    def _fit_to_murnaghan(vol_array, E_array):
+    def _fit_to_murnaghan(self, vol_array, E_array):
         """fts energy vs volume data to murnaghan equation of state"""   
         # fit a parabola to the data to get educated guesses
         a, b, c = np.polyfit(vol_array, E_array, 2)
@@ -233,10 +238,10 @@ class MurnaghanFit(object):
         B0_guess = 2.*a*V0_guess
         BP_guess = 4.
         murnpars_guess = [E0_guess, B0_guess, BP_guess, V0_guess]
-        murnpars = leastsq(_objective, murnpars_guess, args=(E_array,vol_array))
+        murnpars, ier = leastsq(self._objective, murnpars_guess, args=(E_array,vol_array))
         return murnpars
     
-    def _objective(pars,y,x):
+    def _objective(self,pars,y,x):
         err = y -  murnaghan_equation(pars,x)
         return err
 
