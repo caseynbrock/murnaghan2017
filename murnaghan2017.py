@@ -44,8 +44,8 @@ class LatticeParameterSweep(object):
         self.template_file = template_file
         self.abc = np.array(abc)
         self.two_dim = two_dim
-        self.vol_array = None
-        self.E_array = None
+        self.volumes = None 
+        self.energies_hartree = None
         
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
         # or angles (useful for hex)
@@ -139,7 +139,9 @@ class LatticeParameterSweep(object):
             self.run_dft()
             energy_list_hartree.append(self.get_energy())
             os.chdir(main_dir)
-        return energy_list_hartree
+        self.volumes = np.array([self._calc_unit_cell_volume(s) for s in self.abc])
+        self.energies_hartree = energy_list_hartree
+        return self.volumes, energy_list_hartree
 
 
     def run_dft(self):
@@ -184,15 +186,15 @@ class LatticeParameterSweep(object):
         # read energy from log
         energy = abinit_get_energy()
     
-    def fit_sweep_to_murnaghan(self):
-        """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
-        if self.vol_array is None:
-            raise ValueError('No volume data!')
-        if self.E_array is None:
-            raise ValueError('No energy data!')
-        return MurnaghanFit(self.vol_array, self.E_array)
+    # def _fit_sweep_to_murnaghan(self):
+    #     """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
+    #     if self.vol_array is None:
+    #         raise ValueError('No volume data!')
+    #     if self.E_array is None:
+    #         raise ValueError('No energy data!')
+    #     return MurnaghanFit(self.vol_array, self.E_array)
 
-    def write_energy_data(self):
+    def _write_energy_data(self):
         """ 
         writes raw energy data from dft runs.
         The header should contain primitive vectors, and angles if specified

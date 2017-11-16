@@ -249,28 +249,6 @@ def test_murnaghan_equation():
     vol_list = [0.1, 1, 10]
     assert np.isclose(m.murnaghan_equation(parameters, vol_list), [2130.4, 19, 3.88]).all()
 
-# def test_run_energy_calculations_abinit2():
-#     """
-#     sets up files and runs abinit for each lattice constant
-#     
-#     Requires abinit set up correctly
-#     """
-#     with TemporaryDirectory() as tmp_dir:
-#         # set up example input files in temporary directory
-#         os.chdir(tmp_dir)
-#         os.mkdir('templatedir')
-#         shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
-#                     os.path.join('templatedir', 'files'))
-# 
-#         # run sweep  in tmp_dir
-#         energy_driver = 'abinit'
-#         template_file = os.path.join(input_dir, 'abinit.in.template.Li')
-#         abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 1, 1.05]])
-#         prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
-#         sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
-#         sweep.run_energy_calculations()
-#         sweep.fit_sweep_to_murnaghan()
-#     pass # just gonna assume if it gets to here without error, then nothing is wrong
 
 
 # everything in rydberg atomic units unless specified
@@ -283,3 +261,26 @@ def test_MurnaghanFit():
     assert np.isclose(testfit.BP, 2.997968514)
     assert np.isclose(testfit.V0, 42.487211639)
 
+
+def test_run_energy_calculations_abinit():
+    """
+    sets up files and runs abinit for each lattice constant
+    
+    Requires abinit set up correctly
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        os.chdir(tmp_dir)
+        os.mkdir('templatedir')
+        shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
+                    os.path.join('templatedir', 'files'))
+
+        # run sweep  in tmp_dir
+        energy_driver = 'abinit'
+        template_file = os.path.join(input_dir, 'abinit.in.template.Li')
+        abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 1, 1.05]])
+        prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
+        sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
+        vol, E = sweep.run_energy_calculations()
+    assert np.isclose(vol, [15.40574269, 17.9685, 20.80078481]).all()
+    assert np.isclose(E, [-5.9321114343, -6.1395717098, -6.3074769402]).all()
