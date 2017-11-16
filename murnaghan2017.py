@@ -140,9 +140,10 @@ class LatticeParameterSweep(object):
             energy_list_hartree.append(self.get_energy())
             os.chdir(main_dir)
         self.volumes = np.array([self._calc_unit_cell_volume(s) for s in self.abc])
-        self.energies_hartree = energy_list_hartree
+        self.energies_hartree = np.array(energy_list_hartree)
         self._write_energy_data()
-        return self.volumes, energy_list_hartree
+        self._fit_sweep_to_murnaghan()
+        return self.volumes, self.energies_hartree
 
 
     def run_dft(self):
@@ -187,13 +188,15 @@ class LatticeParameterSweep(object):
         # read energy from log
         energy = abinit_get_energy()
     
-    # def _fit_sweep_to_murnaghan(self):
-    #     """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
-    #     if self.vol_array is None:
-    #         raise ValueError('No volume data!')
-    #     if self.E_array is None:
-    #         raise ValueError('No energy data!')
-    #     return MurnaghanFit(self.vol_array, self.E_array)
+    def _fit_sweep_to_murnaghan(self):
+        """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
+        if len(self.abc) < 4:
+            raise ValueError('Murnaghan equation hs 4 parameters...need more points in abc')
+        if self.volumes is None:
+            raise ValueError('No volume data!')
+        if self.energies_hartree is None:
+            raise ValueError('No energy data!')
+        return MurnaghanFit(self.volumes, self.energies_hartree)
 
     def _write_energy_data(self):
         """ 

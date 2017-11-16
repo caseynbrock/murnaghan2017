@@ -272,9 +272,9 @@ def test_write_energy_data():
     pass
     
 
-def test_run_energy_calculations_abinit():
+def test_integration_abinit():
     """
-    sets up files and runs abinit for each lattice constant
+    lattice paramter sweep and murnaghan fitting should run correctly
     
     Requires abinit set up correctly
     """
@@ -287,9 +287,12 @@ def test_run_energy_calculations_abinit():
         # run sweep  in tmp_dir
         energy_driver = 'abinit'
         template_file = os.path.join(input_dir, 'abinit.in.template.Li')
-        abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 1, 1.05]])
+        abc = np.array([[a*pert for a in 3*[3.3]] for pert in [0.95, 0.975, 1, 1.025, 1.05]])
         prim_vec = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, prim_vec=prim_vec)
         vol, E = sweep.run_energy_calculations()
-    assert np.isclose(vol, [15.40574269, 17.9685, 20.80078481]).all()
-    assert np.isclose(E, [-5.9321114343, -6.1395717098, -6.3074769402]).all()
+    assert np.isclose(vol, [15.40574269, 16.65427268, 17.9685, 19.3501092, 20.80078481]).all()
+    assert np.isclose(E, [-5.93211143, -6.04145629, -6.13957171, -6.22787361, -6.30747694]).all()
+    assert os.path.exists('energies.dat')
+
+
