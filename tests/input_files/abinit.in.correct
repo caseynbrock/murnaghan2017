@@ -3,5 +3,5 @@
 # another comment
 xred 0 0 0
      0.5 0.5 0.5
-acell 0.1 0.2 0.3
+acell 1.5 3.0 4.5
 angdeg 90.0 90.0 120.0
