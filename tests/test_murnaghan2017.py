@@ -265,6 +265,8 @@ def test_integration_abinit():
         os.mkdir('templatedir')
         shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
                     os.path.join('templatedir', 'files'))
+        shutil.copy(os.path.join(input_dir, 'Li.PAW.abinit'),
+                    os.path.join('templatedir', 'Li.PAW.abinit'))
 
         # run sweep  in tmp_dir
         energy_driver = 'abinit'
