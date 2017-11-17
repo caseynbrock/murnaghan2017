@@ -112,31 +112,6 @@ def test_preprocess_file_abinit_rprim():
             assert f1.readlines() == f2.readlines()
 
 
-def test_generate_lattice_constants():
-    """ 
-    generates numpy array of lattice paramters correctly
-    """
-    abc_guess = [0.5, 1, 2.0]
-    pert = 0.05
-    N = 5
-    abc = m.generate_lattice_constants(abc_guess, pert, N)
-    abc_correct = np.array([[0.475, 0.95, 1.9], [0.4875, 0.975, 1.95],
-        [0.5, 1., 2.], [0.5125, 1.025, 2.05], [0.525, 1.05, 2.1]])
-    assert (abc == abc_correct).all()
-
-def test_generate_lattice_constants_2d():
-    """ 
-    generates numpy array of lattice paramters correctly
-    """
-    abc_guess = [0.5, 1, 2.0]
-    pert = 0.05
-    N = 5
-    abc = m.generate_lattice_constants(abc_guess, pert, N, two_dim=True)
-    abc_correct = np.array([[0.475, 0.95, 2], [0.4875, 0.975, 2],
-        [0.5, 1., 2.], [0.5125, 1.025, 2], [0.525, 1.05, 2]])
-    assert (abc == abc_correct).all()
-    
-
 def test_prim_vec_from_angles_hex():
     energy_driver = None
     template_file = None

@@ -7,36 +7,6 @@ import subprocess
 from scipy.optimize import leastsq
 import numpy as np
 
-def main():
-    """
-    Sets up and runs lattice parameter sweep.
-
-    The generate_lattice_constants function is provided for convenience.
-    Alternatively, abc can be created manually. It should be
-    an Nx3 numpy array.
-    for 2d materials, it is best not to vary layer spacing, so setting 
-    two_dim=True will leave lattice paramter c fixed during sweep
-    abc = generate_lattice_constants(abc_guess, max_pert, N, two_dim=True)
-    """
-    # User inputs
-    abc_guess = [4, 4, 6]  # lattice parameters guess: a, b, c 
-    angles = [90, 90,120]  # lattice vector angles: alpha, beta, gamma
-    prim_vec = [[1,1,-1], [-1,1,1], [1,-1,1]]  # lattice vector angles: alpha, beta, gamma
-    max_pert = 0.05  # max perturbation of lattice parameters
-    N = 7 # number of steps in lattice parameter sweep
-    energy_driver = 'abinit'  # dft code to use
-
-    # Set up and run lattice parameter sweep
-    abc = generate_lattice_constants(abc_guess, max_pert, N)  # or create abc manually
-    raw_energy_data = run_energy_calculations(abc, angles, energy_driver)
-    
-    write_results(raw_energy_data)
-
-    # Fit energy/volume data to Murnaghan equation of state
-    fit_data = murnaghan_fit(raw_energy_data)
-
-    # optionally, plot data
-    # maybe_plot_or_something()
 
 class LatticeParameterSweep(object):
     """
@@ -365,23 +335,3 @@ def murnaghan_equation(parameters, vol):
     E = E0 + B0*vol/BP*(((V0/vol)**BP)/(BP-1)+1) - V0*B0/(BP-1.)
     return E
     
-
-def generate_lattice_constants(abc_guess, max_pert, N, two_dim=False):
-    """
-    generates an Nx3 numpy array containing the three lattice constants for each energy calculation. 
-    Each value will range from (1-max_pert)*abc_guess[i] to (1+max_pert)*abc_guess[i].
-
-    two_dim: if true, will only scale abc_guess[0] and abc_guess[1].
-        Useful for 2d materials where layer spacing should remain constant.
-    abc_guess: guess of lattice constants a, b, and c (list or numpy array)
-    max_pert: the amount to perturb the lattice constants, eg. 0.05 means +-5%
-    N: number of steps 
-    """
-    abc_guess = np.array(abc_guess)
-    pert_list = np.linspace(1-max_pert, 1+max_pert, N)
-    abc = np.array([pert*abc_guess for pert in pert_list])
-    if two_dim:
-        abc[:,2] = abc_guess[2] # third lattice parameter not varied
-    return abc
-
-
