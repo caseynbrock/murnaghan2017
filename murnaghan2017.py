@@ -257,6 +257,31 @@ class LatticeParameterSweep(object):
                 fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
                         %(a, b, c, V, E_Ha, E_eV))
 
+    def _abc_of_vol(self, V):
+        """
+        calculate a,b, and c given volume of unit cell. 
+        This requires knowledge of the guesses for abc and assumes isotropic scaling of a,b, and c
+        or, for 2d cases, isotropic scaling of a and b while c is fixed.
+
+        Math hint: the ratios between a, b, and c are fixed, 
+        meaning b=a*b_guess/a_guess and c=a*c_guess/a_guess. 
+        Express V in terms of a and the guesses, then solve for a.
+        """
+        u = self.prim_vec_unscaled[0]
+        v = self.prim_vec_unscaled[1]
+        w = self.prim_vec_unscaled[2]
+        V_unscaled = np.dot(u, np.cross(v,w))
+        if self.two_dim:
+            raise Exception
+        else:
+            ag = self.abc_guess[0]
+            bg = self.abc_guess[1]
+            cg = self.abc_guess[2]
+            a = ag*(V/(ag*bg*cg*V_unscaled))**(1./3.)
+            b = a*bg/ag
+            c = a*cg/ag
+            return np.array([a,b,c])
+
 
 
 class MurnaghanFit(object):
@@ -299,24 +324,33 @@ class MurnaghanFit(object):
         return err
     
     def write_murnaghan_data(self):
-        """writes fitted murnaghan paramters to file with some useful units""" 
-        # # convert results to other units
-        # a_angstroms = a_0 * 0.52917725
-        # B_0_gpa = B_0 * 1.8218779e-30 / 5.2917725e-11 / \
-        #           4.8377687e-17 / 4.8377687e-17 * 1.e-9
+        """
+        writes fitted murnaghan paramters to file with some useful units
         
+        to calculate a, b, and c from volume, the original s and abc_guess are needed
+        This assumes isotropic scaling of lattice paramters 
+        """ 
+        # calculate miniumum lattice constant
+        
+
+        # convert results to other units
+        # a_angstroms = a_0 * 0.52917725
+        B0_gpa = self.B0 * 1.8218779e-30 / 5.2917725e-11 / \
+                  4.8377687e-17 / 4.8377687e-17 * 1.e-9
     
         with open('murnaghan_parameters.dat', 'w') as f:
             f.write('# everything in rydberg atomic units unless specified\n')
-            # f.write('E_0: %.9f\n' %self.E0)
-            # f.write('B_0 (bulk modulus): %.9g\n' %self.B0)
-            # f.write('B_0p: %.9f\n' %self.BP)
-            # f.write('V_0: %.9f\n' %self.V0)
-            # f.write('\n')
+            f.write('E_0: %.9f\n' %self.E0)
+            f.write('B_0 (bulk modulus): %.9g\n' %self.B0)
+            f.write('B_0p: %.9f\n' %self.BP)
+            f.write('V_0: %.9f\n' %self.V0)
+            f.write('\n')
             # f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %s_0)
             # f.write('\n')
             # f.write('B_0 (GPa): %.9f\n' %B_0_gpa)
             # f.write('a_0 (angstroms): %.9f\n' %a_angstroms)
+
+
 
 
 def murnaghan_equation(parameters, vol):
