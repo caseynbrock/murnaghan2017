@@ -222,13 +222,10 @@ class LatticeParameterSweep(object):
             f.write('B_0p: %.9f\n' %fit.BP)
             f.write('V_0: %.9f\n' %fit.V0)
             f.write('\n')
-            f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %tuple(abc_min[0]))
+            f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %tuple(abc_min))
             f.write('\n')
             f.write('B_0 (GPa): %.9f\n' %B0_gpa)
             f.write('abc_0 (angstroms): %.9f  %.9f  %.9f\n' %tuple(abc_min_angstroms))
-
-
-
 
 
     def _write_energy_data(self):
@@ -258,6 +255,7 @@ class LatticeParameterSweep(object):
                 E_eV = E_Ha*27.21138602
                 fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
                         %(a, b, c, V, E_Ha, E_eV))
+
 
     def _abc_of_vol(self, V):
         """
