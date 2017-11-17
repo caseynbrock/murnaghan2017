@@ -144,7 +144,7 @@ class LatticeParameterSweep(object):
         
         # write raw data and murnaghan fit data to files
         self._write_energy_data()
-        self.murnaghan_fit.write_murnaghan_data()
+        self._write_murnaghan_data()
 
 
     def run_dft(self):
@@ -198,6 +198,38 @@ class LatticeParameterSweep(object):
         if self.energies_hartree is None:
             raise ValueError('No energy data!')
         return MurnaghanFit(self.volumes, self.energies_hartree)
+
+    def _write_murnaghan_data(self):
+        """
+        writes fitted murnaghan paramters to file with some useful units
+        
+        to calculate a, b, and c from volume, the original s and abc_guess are needed
+        This assumes isotropic scaling of lattice paramters 
+        """
+        fit = self.murnaghan_fit 
+        # calculate miniumum lattice constant
+        abc_min = self._abc_of_vol(fit.V0)
+
+        # convert results to other units
+        abc_min_angstroms = abc_min * 0.52917725
+        B0_gpa = fit.B0 * 1.8218779e-30 / 5.2917725e-11 / \
+                  4.8377687e-17 / 4.8377687e-17 * 1.e-9
+    
+        with open('murnaghan_parameters.dat', 'w') as f:
+            f.write('# everything in Hartree atomic units unless specified\n')
+            f.write('E_0: %.9f\n' %fit.E0)
+            f.write('B_0 (bulk modulus): %.9g\n' %fit.B0)
+            f.write('B_0p: %.9f\n' %fit.BP)
+            f.write('V_0: %.9f\n' %fit.V0)
+            f.write('\n')
+            f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %tuple(abc_min[0]))
+            f.write('\n')
+            f.write('B_0 (GPa): %.9f\n' %B0_gpa)
+            f.write('abc_0 (angstroms): %.9f  %.9f  %.9f\n' %tuple(abc_min_angstroms))
+
+
+
+
 
     def _write_energy_data(self):
         """ 
@@ -293,36 +325,6 @@ class MurnaghanFit(object):
         err = y -  murnaghan_equation(pars,x)
         return err
     
-    def write_murnaghan_data(self):
-        """
-        writes fitted murnaghan paramters to file with some useful units
-        
-        to calculate a, b, and c from volume, the original s and abc_guess are needed
-        This assumes isotropic scaling of lattice paramters 
-        """ 
-        # calculate miniumum lattice constant
-        
-
-        # convert results to other units
-        # a_angstroms = a_0 * 0.52917725
-        B0_gpa = self.B0 * 1.8218779e-30 / 5.2917725e-11 / \
-                  4.8377687e-17 / 4.8377687e-17 * 1.e-9
-    
-        with open('murnaghan_parameters.dat', 'w') as f:
-            f.write('# everything in rydberg atomic units unless specified\n')
-            f.write('E_0: %.9f\n' %self.E0)
-            f.write('B_0 (bulk modulus): %.9g\n' %self.B0)
-            f.write('B_0p: %.9f\n' %self.BP)
-            f.write('V_0: %.9f\n' %self.V0)
-            f.write('\n')
-            # f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %s_0)
-            # f.write('\n')
-            # f.write('B_0 (GPa): %.9f\n' %B_0_gpa)
-            # f.write('a_0 (angstroms): %.9f\n' %a_angstroms)
-
-
-
-
 def murnaghan_equation(parameters, vol):
     """murnaghan equation of state"""
     # given iterables of parameters and volumes, return a numpy array of energies.

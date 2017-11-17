@@ -250,6 +250,18 @@ def test_abc_of_vol2():
     sweep = m.LatticeParameterSweep(None, None, s, abc_guess, angles=angles)
     assert np.isclose(sweep._abc_of_vol(48), [2,4,6]).all()
 
+def test_write_murnaghan_data():
+    with TemporaryDirectory() as tmp_dir:
+        s = [0.95, 0.975, 1, 1.025, 1.05]
+        abc_guess = [3.3, 3.3, 3.3]
+        pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
+        sweep = m.LatticeParameterSweep('', '', s, abc_guess, prim_vec_unscaled=pvu)
+        sweep.volumes = [15.405742687, 16.654272680, 17.968500000, 19.350109195, 20.800784812] # fake data
+        sweep.energies_hartree = [-5.932111434, -6.041456293, -6.139571710, -6.227873609, -6.307476940] # fake data
+        sweep.murnaghan_fit = sweep._fit_sweep_to_murnaghan()
+        sweep._write_murnaghan_data()
+    pass
+
 def test_integration_abinit():
     """
     lattice paramter sweep and murnaghan fitting should run correctly
