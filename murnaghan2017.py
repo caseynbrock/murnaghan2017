@@ -326,10 +326,9 @@ def abc_of_vol(V, V_in, abc_in, two_dim=False):
     if two_dim:
         raise Exception
     else:
-        a = ag*(V/V_in)**(1./3.)
+        a = np.array(ag*(V/V_in)**(1./3.))
         b = a*bg/ag
         c = a*cg/ag
-        print a
         return np.array([a,b,c])
 
 
