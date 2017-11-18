@@ -237,18 +237,12 @@ def test_write_energy_data():
     pass
 
 def test_abc_of_vol():
-    s = []
     abc_guess = [1,2,3]
-    angles = [90,90,90]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, angles=angles)
-    assert np.isclose(sweep._abc_of_vol(6), [1,2,3]).all()
+    assert np.isclose(m.abc_of_vol(6, 6, abc_guess), [1,2,3]).all()
     
 def test_abc_of_vol2():
-    s = []
     abc_guess = [1,2,3]
-    angles = [90,90,90]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, angles=angles)
-    assert np.isclose(sweep._abc_of_vol(48), [2,4,6]).all()
+    assert np.isclose(m.abc_of_vol(48, 6, abc_guess), [2,4,6]).all()
 
 def test_write_murnaghan_data():
     with TemporaryDirectory() as tmp_dir:

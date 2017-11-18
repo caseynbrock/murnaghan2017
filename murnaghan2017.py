@@ -208,7 +208,7 @@ class LatticeParameterSweep(object):
         """
         fit = self.murnaghan_fit 
         # calculate miniumum lattice constant
-        abc_min = self._abc_of_vol(fit.V0)
+        abc_min = abc_of_vol(fit.V0, self.volumes[0], self.acell[0])
 
         # convert results to other units
         abc_min_angstroms = abc_min * 0.52917725
@@ -255,32 +255,6 @@ class LatticeParameterSweep(object):
                 E_eV = E_Ha*27.21138602
                 fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
                         %(a, b, c, V, E_Ha, E_eV))
-
-
-    def _abc_of_vol(self, V):
-        """
-        calculate a,b, and c given volume of unit cell. 
-        This requires knowledge of the guesses for abc and assumes isotropic scaling of a,b, and c
-        or, for 2d cases, isotropic scaling of a and b while c is fixed.
-
-        Math hint: the ratios between a, b, and c are fixed, 
-        meaning b=a*b_guess/a_guess and c=a*c_guess/a_guess. 
-        Express V in terms of a and the guesses, then solve for a.
-        """
-        u = self.prim_vec_unscaled[0]
-        v = self.prim_vec_unscaled[1]
-        w = self.prim_vec_unscaled[2]
-        V_unscaled = np.dot(u, np.cross(v,w))
-        if self.two_dim:
-            raise Exception
-        else:
-            ag = self.abc_guess[0]
-            bg = self.abc_guess[1]
-            cg = self.abc_guess[2]
-            a = ag*(V/(ag*bg*cg*V_unscaled))**(1./3.)
-            b = a*bg/ag
-            c = a*cg/ag
-            return np.array([a,b,c])
 
 
 
@@ -335,3 +309,29 @@ def murnaghan_equation(parameters, vol):
     E = E0 + B0*vol/BP*(((V0/vol)**BP)/(BP-1)+1) - V0*B0/(BP-1.)
     return E
     
+
+def abc_of_vol(V, V_in, abc_in, two_dim=False):
+    """
+    calculate a, b, and c given volume of unit cell and one set of known volume, a, b, and c,
+    assuming isotropic scaling of a, b, and c
+    or, for 2d cases, isotropic scaling of a and b while c is fixed.
+
+    math hint: the ratios between a, b, and c are fixed, 
+    meaning b=a*b_guess/a_guess and c=a*c_guess/a_guess. 
+    express v in terms of a, V_in, and the guesses, then solve for a.
+    """
+    ag = float(abc_in[0])
+    bg = float(abc_in[1])
+    cg = float(abc_in[2])
+    if two_dim:
+        raise Exception
+    else:
+        a = ag*(V/V_in)**(1./3.)
+        b = a*bg/ag
+        c = a*cg/ag
+        print a
+        return np.array([a,b,c])
+
+
+
+
