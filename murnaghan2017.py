@@ -22,12 +22,14 @@ class LatticeParameterSweep(object):
 
     need N > 4 because fitting to murnaghan equation
 
+    angles, prim_vec_unscaled, and s are converted to floats for safety
+
     """
     def __init__(self, energy_driver, template_file, s, abc_guess, angles=None, prim_vec_unscaled=None, two_dim=False):
         self.energy_driver = energy_driver
         self.template_file = template_file
-        self.s = s
-        self.abc_guess = np.array(abc_guess)
+        self.s = map(float, s)
+        self.abc_guess = np.array(map(float, abc_guess))
         self.two_dim = two_dim
         # set prim_vec_unscaled and maybe angles:
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
@@ -37,10 +39,10 @@ class LatticeParameterSweep(object):
         elif prim_vec_unscaled is not None and angles is not None:
             raise ValueError('Either prim_vec or angles should be defined, but not both')
         elif prim_vec_unscaled is not None and angles is None:
-            self.prim_vec_unscaled = np.array(prim_vec_unscaled)
+            self.prim_vec_unscaled = np.array([map(float, row) for row in prim_vec_unscaled])
             self.angles = angles # angles don't need to be calculated
         else:
-            self.angles = np.array(angles)
+            self.angles = np.array(map(float, angles))
             self.prim_vec_unscaled = self._prim_vec_from_angles()
 
         self.acell = [s_i*self.abc_guess for s_i in s]
@@ -93,6 +95,8 @@ class LatticeParameterSweep(object):
         """
         if self.energy_driver=='abinit':
             self._preprocess_file_abinit(ind)
+        # elif self.energy_driver=='socorro':
+        #     self._preprocess_file_socorro(ind)
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -113,6 +117,35 @@ class LatticeParameterSweep(object):
                 f.write('rprim ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[0]]) + '\n')
                 f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
                 f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
+
+    # def _preprocess_file_socorro(self, ind):
+    #     """
+    #     writes crystal file from template with lattice vectors and scale
+
+    #     Socorro only accepts one scale value (as opposed to 3), so the scale is specified as
+    #     acell[0]
+    #     and the primitve vectors are
+    #     prim_vec_unscaled[0]
+    #     acell[1]/acell[0] * prim_vec_unscaled[1]
+    #     acell[2]/acell[0] * prim_vec_unscaled[2]
+    #     """
+    #     shutil.copy2(self.template_file, 'crystal.template')
+    #     if self.angles is not None:
+    #         with open('crystal', 'a') as f:
+    #             raise ValueError('angdeg input not implemented for socorro yet')
+    #     else:
+    #         scale = acell[0]
+    #         
+    #         with open('crystal.template', 'r') as fin:
+    #             template = fin.readlines()
+    #         template.insert(1, '  '+str(scale)+'\n')
+    #         template.insert(2, 'b\n')
+    #         template.insert(3, 'c\n')
+    #         template.insert(4, 'd\n')
+    #         with open('crystal', 'w') as fout:
+    #             for line in template:
+    #                 fout.write(line)
+
 
     def run_energy_calculations(self):
         """

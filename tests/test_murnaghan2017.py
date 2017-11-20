@@ -46,7 +46,7 @@ def test_angles_prim_vec_both():
     abc_guess = []
     s = []
     with pytest.raises(ValueError):
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, angles=1, prim_vec_unscaled=1)
+        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, angles=1, prim_vec_unscaled=[])
 
 def test_angles_None_when_prim_vec_specified():
     """
@@ -55,8 +55,8 @@ def test_angles_None_when_prim_vec_specified():
     energy_driver = None
     template_file = None
     s = []
-    abc_guess = None
-    sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=1)
+    abc_guess = []
+    sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=[])
     assert sweep.angles is None
 
 def test_preprocess_file_bad():
@@ -94,7 +94,7 @@ def test_preprocess_file_abinit_angdeg():
 
 def test_preprocess_file_abinit_rprim():
     """
-    calling _preprocess_file with for abinit correctly writes lattice constants and angles to abinit input file.
+    calling _preprocess_file with for abinit correctly writes acell and lattice vectors to file
     
     not very robust since different number format would cause a fail
     """
@@ -112,6 +112,27 @@ def test_preprocess_file_abinit_rprim():
             assert f1.readlines() == f2.readlines()
 
 
+# def test_preprocess_file_socorro_rprim():
+#     """
+#     calling _preprocess_file for socorro correctly writes scale and lattice constants and angles to socorro crystal file
+#     
+#     not very robust since different number format would cause a fail
+#     """
+#     with TemporaryDirectory() as tmp_dir:
+#         correct_file = os.path.join(input_dir, 'crystal.correct')
+#         energy_driver = 'socorro'
+#         template_file = os.path.join(input_dir, 'crystal.template.example')
+#         s = [0.9, 1.0, 1.5]
+#         abc_guess = [1,2,4]
+#         pvu = [[1,1,0], [0,1,1], [1,0,1]]
+#         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
+#         sweep._preprocess_file(2)
+#         shutil.copy('crystal', '..')
+#         # compare written abinit file with correct input file
+#         with open(correct_file) as f1, open('crystal') as f2:
+#             assert f1.readlines() == f2.readlines()
+
+
 def test_prim_vec_from_angles_hex():
     energy_driver = None
     template_file = None
@@ -126,7 +147,7 @@ def test_prim_vec_from_angles_tetr():
     energy_driver = None
     template_file = None
     s = []
-    abc = None
+    abc = []
     angles = [90, 90, 90]
     sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, angles=angles)
     correct_vec = np.array([[1,0,0],[0,1,0], [0,0,1]])
@@ -139,7 +160,7 @@ def test_get_energy_bad():
     energy_driver = 'bad'
     template_file = None
     s = []
-    abc = None
+    abc = []
     pvu = [[1,1,0], [0,1,1], [1,0,1]]
     sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
     with pytest.raises(ValueError):
@@ -151,8 +172,8 @@ def test_abinit_get_energy_single():
         energy_driver='abinit'
         template_file = None
         s = []
-        abc = None
-        pvu = 0
+        abc = []
+        pvu = []
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
         shutil.copy(os.path.join(input_dir, 'log.example'), 'log')
         E = sweep.get_energy()
@@ -165,8 +186,8 @@ def test_abinit_get_energy_multiple():
         energy_driver='abinit'
         template_file = None
         s = []
-        abc = None
-        pvu = 0
+        abc = []
+        pvu = []
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
         shutil.copy(os.path.join(input_dir, 'log.structurerelax.example'), 'log')
         E = sweep.get_energy()
@@ -213,9 +234,6 @@ def test_murnaghan_equation():
     vol_list = [0.1, 1, 10]
     assert np.isclose(m.murnaghan_equation(parameters, vol_list), [2130.4, 19, 3.88]).all()
 
-
-
-# everything in rydberg atomic units unless specified
 def test_MurnaghanFit():
     vol_array = [34.598173802, 37.402118963, 40.353607000, 43.456421063, 46.714344303]
     E_array = [-2.126149418, -2.130179030, -2.132207477, -2.132510305, -2.131351938]
@@ -247,7 +265,7 @@ def test_abc_of_vol2():
 def test_write_murnaghan_data():
     with TemporaryDirectory() as tmp_dir:
         s = [0.95, 0.975, 1, 1.025, 1.05]
-        abc_guess = [3.3, 3.3, 3.3]
+        abc_guess = [6.6, 6.6, 6.6]
         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
         sweep = m.LatticeParameterSweep('', '', s, abc_guess, prim_vec_unscaled=pvu)
         sweep.volumes = [15.405742687, 16.654272680, 17.968500000, 19.350109195, 20.800784812] # fake data
@@ -256,6 +274,7 @@ def test_write_murnaghan_data():
         sweep._write_murnaghan_data()
     pass
 
+@pytest.mark.integration
 def test_integration_abinit():
     """
     lattice paramter sweep and murnaghan fitting should run correctly
@@ -282,8 +301,8 @@ def test_integration_abinit():
         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
         sweep.run_energy_calculations()
-        #shutil.copy('energies.dat', '..')
-        #shutil.copy('murnaghan_parameters.dat', '..')
+        shutil.copy('energies.dat', '..')
+        shutil.copy('murnaghan_parameters.dat', '..')
         # assert data files written (correctly or not)
         assert os.path.exists('energies.dat')
         assert os.path.exists('murnaghan_parameters.dat')
