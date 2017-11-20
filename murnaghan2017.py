@@ -129,7 +129,10 @@ class LatticeParameterSweep(object):
         acell[1]/acell[0] * prim_vec_unscaled[1]
         acell[2]/acell[0] * prim_vec_unscaled[2]
         """
-        shutil.copy2(self.template_file, 'crystal.template')
+        try:
+            shutil.copy2(self.template_file, 'crystal.template')
+        except shutil.Error:
+            pass
         if self.angles is not None:
             with open('crystal', 'a') as f:
                 raise ValueError('angdeg input not implemented for socorro yet')
@@ -166,10 +169,8 @@ class LatticeParameterSweep(object):
         energy_list_hartree = []
         for i in range(len(self.s)):
             dir_name = 'workdir.'+str(i)
-            #self._setup_workdir(dir_name)
-            shutil.copytree('templatedir', dir_name)
+            self._setup_workdir(dir_name)
             os.chdir(dir_name)
-            # need to scale abc_guess
             self._preprocess_file(i)
             self.run_dft()
             energy_list_hartree.append(self.get_energy())
@@ -183,6 +184,21 @@ class LatticeParameterSweep(object):
         self._write_energy_data()
         self._write_murnaghan_data()
 
+    def _setup_workdir(self, dir_name):
+        if self.energy_driver=='abinit':
+            shutil.copytree('templatedir', dir_name)
+        elif self.energy_driver=='socorro':
+            shutil.copytree('templatedir', dir_name)
+            this_dir = os.getcwd()
+            os.chdir(dir_name)
+            os.mkdir('data')
+            os.chdir('data')
+            os.symlink(os.path.join('..', 'crystal'), 'crystal')
+            for file in [os.path.basename(x) for x in glob.glob('../PAW.*')]:
+                os.symlink(os.path.join('..', file), file)
+            os.chdir(this_dir)
+        else:
+            raise ValueError('Unknown energy driver specified')
 
     def run_dft(self):
         """
@@ -192,6 +208,9 @@ class LatticeParameterSweep(object):
             with open('log', 'w') as log_fout, open('files','r') as files_fin:
                 #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
                 subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
+        if self.energy_driver=='socorro':
+            with open('log', 'w') as log_fout:
+                subprocess.call(['socorro'], stdout=log_fout)
         else:
             raise ValueError('Unknown energy driver specified')
         

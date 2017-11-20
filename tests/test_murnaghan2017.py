@@ -312,8 +312,8 @@ def test_integration_abinit():
         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
         sweep.run_energy_calculations()
-        shutil.copy('energies.dat', '..')
-        shutil.copy('murnaghan_parameters.dat', '..')
+        #shutil.copy('energies.dat', '..')
+        #shutil.copy('murnaghan_parameters.dat', '..')
         # assert data files written (correctly or not)
         assert os.path.exists('energies.dat')
         assert os.path.exists('murnaghan_parameters.dat')
@@ -328,45 +328,39 @@ def test_integration_abinit():
     assert np.isclose(sweep.murnaghan_fit.V0, 49.4869248327)
 
 
-# def test_integration_socorro():
-#     """
-#     lattice paramter sweep and murnaghan fitting should run correctly
-#     
-#     Requires abinit set up correctly. Also, this test is fragile because
-#     different abinit versions could calulate different energies. If this causes
-#     problems in the future, either increase np.isclose tolerance or (worse) update
-#     energy values to new abinit outputs.
-#     If the energy values are wrong, the murnaghan paramters will be too.
-#     """
-#     with TemporaryDirectory() as tmp_dir:
-#         # set up example input files in temporary directory
-#         os.mkdir('templatedir')
-#         shutil.copy(os.path.join(input_dir, 'files.example.Li'), 
-#                     os.path.join('templatedir', 'files'))
-#         shutil.copy(os.path.join(input_dir, 'Li.PAW.abinit'),
-#                     os.path.join('templatedir', 'Li.PAW.abinit'))
-# 
-#         # run sweep  in tmp_dir
-#         energy_driver = 'abinit'
-#         template_file = os.path.join(input_dir, 'abinit.in.template.Li')
-#         s = [0.95, 0.975, 1, 1.025, 1.05]
-#         abc_guess = [3.3, 3.3, 3.3]
-#         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
-#         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
-#         sweep.run_energy_calculations()
-#         shutil.copy('energies.dat', '..')
-#         shutil.copy('murnaghan_parameters.dat', '..')
-#         # assert data files written (correctly or not)
-#         assert os.path.exists('energies.dat')
-#         assert os.path.exists('murnaghan_parameters.dat')
-# 
-#     # assert volumes and energies are correct
-#     assert np.isclose(sweep.volumes, [15.40574269, 16.65427268, 17.9685, 19.3501092, 20.80078481]).all()
-#     assert np.isclose(sweep.energies_hartree, [-5.93211143, -6.04145629, -6.13957171, -6.22787361, -6.30747694]).all()
-#     # assert murnaghan parameters are correct
-#     assert np.isclose(sweep.murnaghan_fit.E0, -6.76174906082)
-#     assert np.isclose(sweep.murnaghan_fit.B0, 0.0253966713811)
-#     assert np.isclose(sweep.murnaghan_fit.BP, 1.71091944591)
-#     assert np.isclose(sweep.murnaghan_fit.V0, 49.4869248327)
-# 
-# 
+def test_integration_socorro():
+    """
+    lattice paramter sweep and murnaghan fitting should run correctly
+    
+    Requires abinit set up correctly. Also, this test is fragile because
+    different abinit versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new abinit outputs.
+    If the energy values are wrong, the murnaghan paramters will be too.
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        shutil.copytree(os.path.join(input_dir, 'socorro_LiF'), 'templatedir')
+        # run sweep  in tmp_dir
+        energy_driver = 'socorro'
+        template_file = 'crystal.template'
+        s = [0.95, 0.975, 1, 1.025, 1.05]
+        abc_guess = [7.6, 7.6, 7.6]
+        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
+        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
+        sweep.run_energy_calculations()
+        shutil.copy('energies.dat', '..')
+        shutil.copy('murnaghan_parameters.dat', '..')
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('murnaghan_parameters.dat')
+
+    # assert volumes and energies are correct
+    assert np.isclose(sweep.volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
+    assert np.isclose(sweep.energies_hartree, [-37.012225020, -37.042712697, -37.067941736, -37.090042723, -37.106637075]).all()
+    # assert murnaghan parameters are correct
+    assert np.isclose(sweep.murnaghan_fit.E0, -37.129044175)
+    assert np.isclose(sweep.murnaghan_fit.B0, 0.00722071666)
+    assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090)
+    assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733)
+
