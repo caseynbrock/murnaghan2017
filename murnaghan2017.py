@@ -166,6 +166,7 @@ class LatticeParameterSweep(object):
         energy_list_hartree = []
         for i in range(len(self.s)):
             dir_name = 'workdir.'+str(i)
+            #self._setup_workdir(dir_name)
             shutil.copytree('templatedir', dir_name)
             os.chdir(dir_name)
             # need to scale abc_guess
@@ -201,6 +202,8 @@ class LatticeParameterSweep(object):
         """
         if self.energy_driver=='abinit':
             return self._get_energy_abinit()
+        elif self.energy_driver=='socorro':
+            return self._get_energy_socorro()
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -214,8 +217,21 @@ class LatticeParameterSweep(object):
             for line in log_fin.readlines():
                 if ' etotal ' in line:
                     etotal_line = line
-        abinit_energy_hartree = np.float(etotal_line.split()[1])
+        abinit_energy_hartree = float(etotal_line.split()[1])
         return abinit_energy_hartree
+
+    def _get_energy_socorro(self):
+        """
+        reads total energy from socorro diary file
+        """
+        # reads and returns energy from socorro output file, diaryf
+        with open('diaryf', 'r') as diaryf_fin:
+            for line in diaryf_fin.readlines():
+                if 'cell energy   ' in line:
+                    soc_energy_rydberg = float(line.split()[3])
+        soc_energy_hartree = soc_energy_rydberg/2.
+        return soc_energy_hartree
+
     
     def run_abinit():
         #call abinit
