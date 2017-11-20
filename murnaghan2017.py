@@ -95,8 +95,8 @@ class LatticeParameterSweep(object):
         """
         if self.energy_driver=='abinit':
             self._preprocess_file_abinit(ind)
-        # elif self.energy_driver=='socorro':
-        #     self._preprocess_file_socorro(ind)
+        elif self.energy_driver=='socorro':
+            self._preprocess_file_socorro(ind)
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -118,33 +118,36 @@ class LatticeParameterSweep(object):
                 f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
                 f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
 
-    # def _preprocess_file_socorro(self, ind):
-    #     """
-    #     writes crystal file from template with lattice vectors and scale
+    def _preprocess_file_socorro(self, ind):
+        """
+        writes crystal file from template with lattice vectors and scale
 
-    #     Socorro only accepts one scale value (as opposed to 3), so the scale is specified as
-    #     acell[0]
-    #     and the primitve vectors are
-    #     prim_vec_unscaled[0]
-    #     acell[1]/acell[0] * prim_vec_unscaled[1]
-    #     acell[2]/acell[0] * prim_vec_unscaled[2]
-    #     """
-    #     shutil.copy2(self.template_file, 'crystal.template')
-    #     if self.angles is not None:
-    #         with open('crystal', 'a') as f:
-    #             raise ValueError('angdeg input not implemented for socorro yet')
-    #     else:
-    #         scale = acell[0]
-    #         
-    #         with open('crystal.template', 'r') as fin:
-    #             template = fin.readlines()
-    #         template.insert(1, '  '+str(scale)+'\n')
-    #         template.insert(2, 'b\n')
-    #         template.insert(3, 'c\n')
-    #         template.insert(4, 'd\n')
-    #         with open('crystal', 'w') as fout:
-    #             for line in template:
-    #                 fout.write(line)
+        Socorro only accepts one scale value (as opposed to 3), so the scale is specified as
+        acell[0]
+        and the primitve vectors are
+        prim_vec_unscaled[0]
+        acell[1]/acell[0] * prim_vec_unscaled[1]
+        acell[2]/acell[0] * prim_vec_unscaled[2]
+        """
+        shutil.copy2(self.template_file, 'crystal.template')
+        if self.angles is not None:
+            with open('crystal', 'a') as f:
+                raise ValueError('angdeg input not implemented for socorro yet')
+        else:
+            this_acell = self.acell[ind]
+            scale = this_acell[0]
+            prim_vec_0 = self.prim_vec_unscaled[0]
+            prim_vec_1 = this_acell[1]/this_acell[0] * self.prim_vec_unscaled[1]
+            prim_vec_2 = this_acell[2]/this_acell[0] * self.prim_vec_unscaled[2]
+            with open('crystal.template', 'r') as fin:
+                template = fin.readlines()
+            template.insert(1, '  '+str(scale)+'\n')
+            template.insert(2, '    ' + ' '.join(map(str, prim_vec_0)) + '\n')
+            template.insert(3, '    ' + ' '.join(map(str, prim_vec_1)) + '\n')
+            template.insert(4, '    ' + ' '.join(map(str, prim_vec_2)) + '\n')
+            with open('crystal', 'w') as fout:
+                for line in template:
+                    fout.write(line)
 
 
     def run_energy_calculations(self):
