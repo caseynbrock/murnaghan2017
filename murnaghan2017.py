@@ -208,7 +208,7 @@ class LatticeParameterSweep(object):
             with open('log', 'w') as log_fout, open('files','r') as files_fin:
                 #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
                 subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
-        if self.energy_driver=='socorro':
+        elif self.energy_driver=='socorro':
             with open('log', 'w') as log_fout:
                 subprocess.call(['socorro'], stdout=log_fout)
         else:
