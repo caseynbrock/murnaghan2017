@@ -332,8 +332,8 @@ def test_integration_socorro():
     """
     lattice paramter sweep and murnaghan fitting should run correctly
     
-    Requires abinit set up correctly. Also, this test is fragile because
-    different abinit versions could calulate different energies. If this causes
+    Requires socorro set up correctly. Also, this test is fragile because
+    different socorro versions could calulate different energies. If this causes
     problems in the future, either increase np.isclose tolerance or (worse) update
     energy values to new abinit outputs.
     If the energy values are wrong, the murnaghan paramters will be too.
