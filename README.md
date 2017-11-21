@@ -1,4 +1,4 @@
-# murnaghan2017
+## murnaghan2017
 Fit Murnaghan equation of state to energy/volume data. Also, easily calculate energy/volume data using some DFT codes.
 
 Currently, this is only set up for the Abinit and Socorro DFT codes, though others could be added easily.
@@ -26,7 +26,13 @@ $ pytest tests/test_murnaghan2017.py::test_preprocess_file_abinit_rprim
 ```
 
 # General setup
-assumes no unit cell relaxation happens during a single call to the dft code
+You will need to run a python script which sets up the lattice parameter sweep and does the post processing. The example script can be modified for your system.
+Assumes no unit cell relaxation happens during a single call to the dft code.
+
+# Setup for Socorro
+* Create a directory called templatedir/
+* Put input files *crystal* and *argvf* and pseudopotentials in templatedir/
+* **Delete scale and primitve vector lines from crystal file**
 
 # Setup for abinit
 * Create a directory called templatedir/
