@@ -1,25 +1,36 @@
 # murnaghan2017
 Fit Murnaghan equation of state to energy/volume data. Also, easily calculate energy/volume data using some DFT codes.
 
-Currently, this is only set up for the Abinit DFT code.
+Currently, this is only set up for the Abinit and Socorro DFT codes, though others could be added easily.
 
-To get running:
-) clone repository
-) run tests:
-$ pytest 
+# Running tests
+In the main directory, run
+```bash
+$ pytest
+```
 or my preference
+```bash
 $ pytest -v
+```
 or to exclude integration tests (which actually run the dft codes)
+```bash
 $ pytest -k "not integration"
+```
 or to exclude tests for a certain dft code (abinit for example)
+```bash
 $ pytest -k "not abinit"
+```
 or to run a specific test
+```bash
 $ pytest tests/test_murnaghan2017.py::test_preprocess_file_abinit_rprim
+```
 
+# General setup
+assumes no unit cell relaxation happens during a single call to the dft code
 
-Setup for abinit:
-this directory should contain abinit.in.template, which gets edited by the murnaghan2017 script.
-It should also contain a directory called templatedir containing the abinit files file, which should be named 'files'. 
-This templatedir gets copied to a new working directory, workdir.<i>, for each abinit run.
-If the abinit runs require any more input files, they should be placed in templatedir.
-Note that these scripts name the abinit input file abinit.in, so that should be the first line of the files file.
+# Setup for abinit
+* Create a directory called templatedir/
+* Put all abinit input files in templatedir/ (usually just a files file and input file, and possibly pseudopotentials)
+* The files file should be named *files* and the input file should be named *abinit.in.template*
+* Set the first line of *files* file to "abinit.in", which is the name of the input files these scripts will create
+* **All keywords and values involving unit cell definition in _abinit.in.template_ should be commented or deleted. These include _acell_, _rprim_, _angdeg_, _scalecart_, _brvltt_, and _spgroup_.**
