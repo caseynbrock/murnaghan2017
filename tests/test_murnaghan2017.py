@@ -349,8 +349,8 @@ def test_integration_socorro():
         pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
         sweep.run_energy_calculations()
-        shutil.copy('energies.dat', '..')
-        shutil.copy('murnaghan_parameters.dat', '..')
+        #shutil.copy('energies.dat', '..')
+        #shutil.copy('murnaghan_parameters.dat', '..')
         # assert data files written (correctly or not)
         assert os.path.exists('energies.dat')
         assert os.path.exists('murnaghan_parameters.dat')
