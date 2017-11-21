@@ -3,6 +3,19 @@ Fit Murnaghan equation of state to energy/volume data. Also, easily calculate en
 
 Currently, this is only set up for the Abinit DFT code.
 
+To get running:
+) clone repository
+) run tests:
+$ pytest 
+or my preference
+$ pytest -v
+or to exclude integration tests (which actually run the dft codes)
+$ pytest -k "not integration"
+or to exclude tests for a certain dft code (abinit for example)
+$ pytest -k "not abinit"
+or to run a specific test
+$ pytest tests/test_murnaghan2017.py::test_preprocess_file_abinit_rprim
+
 
 Setup for abinit:
 this directory should contain abinit.in.template, which gets edited by the murnaghan2017 script.
