@@ -114,7 +114,7 @@ def test_preprocess_file_abinit_rprim():
 
 def test_preprocess_file_socorro_rprim():
     """
-    calling _preprocess_file for socorro correctly writes scale and lattice constants and angles to socorro crystal file
+    calling _preprocess_file for socorro correctly writes scale and lattice constants to socorro crystal file
     
     not very robust since different number format would cause a fail
     """
@@ -130,6 +130,27 @@ def test_preprocess_file_socorro_rprim():
         # compare written abinit file with correct input file
         with open(correct_file) as f1, open('crystal') as f2:
             assert f1.readlines() == f2.readlines()
+
+
+def test_preprocess_file_elk_rprim():
+    """
+    calling _preprocess_file for elk correctly writes scale and lattice constants to elk.in
+    
+    not very robust since different number format would cause a fail
+    """
+    with TemporaryDirectory() as tmp_dir:
+        correct_file = os.path.join(input_dir, 'elk.in.correct')
+        energy_driver = 'elk'
+        template_file = os.path.join(input_dir, 'elk.in.template.example')
+        s = [0.9, 1.0, 1.5]
+        abc_guess = [1,2,4]
+        pvu = [[1,1,0], [0,1,1], [1,0,1]]
+        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
+        sweep._preprocess_file(2)
+        # compare written abinit file with correct input file
+        with open(correct_file) as f1, open('elk.in') as f2:
+            assert f1.readlines() == f2.readlines()
+
 
 
 def test_prim_vec_from_angles_hex():

@@ -97,6 +97,8 @@ class LatticeParameterSweep(object):
             self._preprocess_file_abinit(ind)
         elif self.energy_driver=='socorro':
             self._preprocess_file_socorro(ind)
+        elif self.energy_driver=='elk':
+            self._preprocess_file_elk(ind)
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -151,6 +153,25 @@ class LatticeParameterSweep(object):
             with open('crystal', 'w') as fout:
                 for line in template:
                     fout.write(line)
+
+    def _preprocess_file_elk(self, ind):
+        """
+        writes elk.in from template and appends lattice vector lengths (scale1, scale2, scale3) and 
+        primitive vectors (avec)
+        """
+        shutil.copy2(self.template_file, 'elk.in')
+        if self.angles is not None:
+            raise ValueError('angdeg input not implemented for elk yet')
+        else:
+            with open('elk.in', 'a') as f:
+                scale123 = self.acell[ind]
+                f.write('\nscale1\n  ' + str(float(scale123[0])) + '\n')
+                f.write('\nscale2\n  ' + str(float(scale123[1])) + '\n')
+                f.write('\nscale3\n  ' + str(float(scale123[2])) + '\n')
+                f.write('\navec\n') 
+                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[0]]) + '\n')
+                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
+                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
 
 
     def run_energy_calculations(self):
