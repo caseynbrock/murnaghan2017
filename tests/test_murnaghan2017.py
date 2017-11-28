@@ -369,7 +369,7 @@ def test_integration_socorro():
     Requires socorro set up correctly. Also, this test is fragile because
     different socorro versions could calulate different energies. If this causes
     problems in the future, either increase np.isclose tolerance or (worse) update
-    energy values to new abinit outputs.
+    energy values to new socorro outputs.
     If the energy values are wrong, the murnaghan paramters will be too.
     """
     with TemporaryDirectory() as tmp_dir:
@@ -399,4 +399,39 @@ def test_integration_socorro():
     assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733)
 
 def test_integration_elk():
-    assert False
+    """
+    lattice paramter sweep and murnaghan fitting should run correctly
+    
+    Requires elk set up correctly. Also, this test is fragile because
+    different elk versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new elk outputs.
+    If the energy values are wrong, the murnaghan paramters will be too.
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        os.mkdir('templatedir')
+        shutil.copy(os.path.join(input_dir, 'elk.in.template.Li'), 
+                    os.path.join('templatedir', 'elk.in.template'))
+        # run sweep  in tmp_dir
+        energy_driver = 'elk'
+        template_file = 'elk.in.template'
+        s = [0.95, 0.975, 1, 1.025, 1.05]
+        abc_guess = [7.6, 7.6, 7.6]
+        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
+        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
+        sweep.run_energy_calculations()
+        #shutil.copy('energies.dat', '..')
+        #shutil.copy('murnaghan_parameters.dat', '..')
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('murnaghan_parameters.dat')
+
+    # assert volumes and energies are correct
+    assert np.isclose(sweep.volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
+    assert np.isclose(sweep.energies_hartree, [-7.515024699, -7.516721695, -7.517852094, -7.518522940, -7.518821210]).all()
+    # assert murnaghan parameters are correct
+    assert np.isclose(sweep.murnaghan_fit.E0, -7.518850974)
+    assert np.isclose(sweep.murnaghan_fit.B0, 0.00043323874)
+    assert np.isclose(sweep.murnaghan_fit.BP, 3.505576932)
+    assert np.isclose(sweep.murnaghan_fit.V0, 131.193402033)
