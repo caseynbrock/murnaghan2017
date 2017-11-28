@@ -127,7 +127,7 @@ def test_preprocess_file_socorro_rprim():
         pvu = [[1,1,0], [0,1,1], [1,0,1]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
         sweep._preprocess_file(2)
-        # compare written abinit file with correct input file
+        # compare written socorro crystal file with correct input file
         with open(correct_file) as f1, open('crystal') as f2:
             assert f1.readlines() == f2.readlines()
 
@@ -147,7 +147,7 @@ def test_preprocess_file_elk_rprim():
         pvu = [[1,1,0], [0,1,1], [1,0,1]]
         sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
         sweep._preprocess_file(2)
-        # compare written abinit file with correct input file
+        # compare written elk.in file with correct input file
         with open(correct_file) as f1, open('elk.in') as f2:
             assert f1.readlines() == f2.readlines()
 
@@ -225,6 +225,19 @@ def test_get_energy_socorro():
         shutil.copy(os.path.join(input_dir, 'diaryf.example'), 'diaryf')
         E = sweep.get_energy()
         assert np.isclose(E, -74.637868487/2.)
+
+def test_get_energy_elk():
+    """read cell enrgy from socorro correctly"""
+    with TemporaryDirectory() as tmp_dir:
+        energy_driver = 'elk'
+        template_file = None
+        s = []
+        abc = []
+        pvu = []
+        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
+        shutil.copy(os.path.join(input_dir, 'TOTENERGY.OUT.example'), 'TOTENERGY.OUT')
+        E = sweep.get_energy()
+        assert np.isclose(E, -7.51826352965)
     
 
 def test_calc_unit_cell_volume():
@@ -385,3 +398,5 @@ def test_integration_socorro():
     assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090)
     assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733)
 
+def test_integration_elk():
+    assert False

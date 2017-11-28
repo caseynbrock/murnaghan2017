@@ -218,6 +218,8 @@ class LatticeParameterSweep(object):
             for file in [os.path.basename(x) for x in glob.glob('../PAW.*')]:
                 os.symlink(os.path.join('..', file), file)
             os.chdir(this_dir)
+        elif self.energy_driver=='elk':
+            shutil.copytree('templatedir', dir_name)
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -232,6 +234,9 @@ class LatticeParameterSweep(object):
         elif self.energy_driver=='socorro':
             with open('log', 'w') as log_fout:
                 subprocess.call(['socorro'], stdout=log_fout)
+        elif self.energy_driver=='elk':
+            with open('log', 'w') as log_fout:
+                subprocess.call(['elk'], stdout=log_fout)
         else:
             raise ValueError('Unknown energy driver specified')
         
@@ -244,6 +249,8 @@ class LatticeParameterSweep(object):
             return self._get_energy_abinit()
         elif self.energy_driver=='socorro':
             return self._get_energy_socorro()
+        elif self.energy_driver=='elk':
+            return self._get_energy_elk()
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -272,14 +279,18 @@ class LatticeParameterSweep(object):
         soc_energy_hartree = soc_energy_rydberg/2.
         return soc_energy_hartree
 
+    def _get_energy_elk(self):
+        elk_energy_all_iterations = np.loadtxt('TOTENERGY.OUT')
+        elk_energy_hartree = elk_energy_all_iterations[-1]
+        return elk_energy_hartree
     
-    def run_abinit():
-        #call abinit
-        with open('log', 'w') as log_fout, open('files','r') as files_fin:
-            #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
-            subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
-        # read energy from log
-        energy = abinit_get_energy()
+    # def run_abinit():
+    #     #call abinit
+    #     with open('log', 'w') as log_fout, open('files','r') as files_fin:
+    #         #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
+    #         subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
+    #     # read energy from log
+    #     energy = abinit_get_energy()
     
     def _fit_sweep_to_murnaghan(self):
         """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
