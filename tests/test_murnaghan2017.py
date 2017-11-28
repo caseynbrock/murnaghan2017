@@ -413,6 +413,8 @@ def test_integration_elk():
         os.mkdir('templatedir')
         shutil.copy(os.path.join(input_dir, 'elk.in.template.Li'), 
                     os.path.join('templatedir', 'elk.in.template'))
+        shutil.copy(os.path.join(input_dir, 'Li.in.elkspecies'), 
+                    os.path.join('templatedir', 'Li.in'))
         # run sweep  in tmp_dir
         energy_driver = 'elk'
         template_file = 'elk.in.template'

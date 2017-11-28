@@ -12,7 +12,7 @@ mixtype
   3
 
 sppath
-  '/home/cbrock/local/elk/elk-4.3.6/species/'
+  './'
 
 atoms
    1                                 : nspecies
