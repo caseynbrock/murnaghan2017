@@ -1,7 +1,7 @@
 # murnaghan2017
 Fit Murnaghan equation of state to energy/volume data. Also, easily calculate energy/volume data using some DFT codes.
 
-Currently, this is only set up for the Abinit and Socorro DFT codes, though others could be added easily.
+Currently, this is only set up for the Abinit, Socorro, and Elk DFT codes, though others could be added easily.
 
 If pytest won't work, or the modules can't be found, you can try loading an anaconda module. I've had issues with older versions of pytest
 
@@ -30,8 +30,14 @@ $ pytest tests/test_murnaghan2017.py::test_preprocess_file_abinit_rprim
 ```
 
 ## General setup
-You will need to run a python script which sets up the lattice parameter sweep and does the post processing. The example script can be modified for your system.
-Assumes no unit cell relaxation happens during a single call to the dft code.
+You will need to create a python script which imports the murnaghan2017 module, sets up the lattice parameter sweep, and does the post processing. This repository includes an example script, *example_run.py*, which you can start with and modify for your system. The dft code to use and the template file are specified in this script. You will also need to specify the unscaled primitive vectors for your unit cell, guesses for lattice parameters (these get multiplied by the unscaled primitive vectors), and a list of scales at least 4 elements long.
+
+For example, for the Nth scale tested, the lattice vectors will be
+```latex
+s[N]*abc_guess[i]*pvu[i] for i=0,1,2
+```
+
+The post processing assumes no unit cell relaxation happens during a single call to the dft code (atomic position relaxation is okay).
 
 ## Setup for Socorro
 * Create a directory called templatedir/
@@ -47,8 +53,23 @@ Assumes no unit cell relaxation happens during a single call to the dft code.
 * Set the first line of *files* file to "abinit.in", which is the name of the input files these scripts will create
 * **All keywords and values involving unit cell definition in _abinit.in.template_ should be commented or deleted. These include _acell_, _rprim_, _angdeg_, _scalecart_, _brvltt_, and _spgroup_.**
 
+## Setup for Elk
+* Create a directory called templatedir/
+* Put your elk input file *elk.in* in templatedir/
+* rename *elk.in* to *elk.in.template*
+* **All keywords and values involving unit cell definition in _elk.in.template_ should be commented or deleted. These include _scale_, _scale1_, _scale2_, _scale3_, and _avec_.**
+
+## Run lattice parameter sweep
+Using the included example script,
+```bash
+$ pytest example_run.py
+```
+This should run N instances of the dft code in labeled work directories. The calculated energies are written to *energies.dat* and the fitted murnaghan parameters including lattice constant and bulk modulus are written to *murnaghan_paramters.dat*.
+
 ## Results
 * *energies.dat* contains raw data
 * *murnaghan_paramters.dat* contains fitted murnaghan parameters
 * *plot_murnaghan.py* will plot the fit and raw data vs both volume and scale *a*. It can be modified to plot against other lattice vector scale values if needed. 
+
+## Notes
 * "invalid error encountered in power" error usually means raw energy data is bad. You can read energies.dat or visualize with plot_murnaghan.py
