@@ -37,6 +37,11 @@ For example, for the Nth scale tested, the lattice vectors will be
 s[N]*abc_guess[i]*pvu[i] for i=0,1,2
 ```
 
+### Notes for two-dimensional materials
+for two-dimensional materials, set two_dim=True when instantiating the LatticeParameterSweep object. Tis tells the code to scale only the a and ba lattice parameters and leave c fixed. For example:
+```python
+sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu, two_dim=True)
+```
 The post processing assumes no unit cell relaxation happens during a single call to the dft code (atomic position relaxation is okay).
 
 ## Setup for Socorro
