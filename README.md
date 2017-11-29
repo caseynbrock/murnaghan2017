@@ -29,6 +29,8 @@ or to run a specific test
 $ pytest tests/test_murnaghan2017.py::test_preprocess_file_abinit_rprim
 ```
 
+If you don't have Abinit, Socorro, or Elk set up on your computer, then the corresponding integration tests will fail.
+
 ## General setup
 You will need to create a python script which imports the murnaghan2017 module, sets up the lattice parameter sweep, and does the post processing. This repository includes an example script, *example_run.py*, which you can start with and modify for your system. The dft code to use and the template file are specified in this script. You will also need to specify the unscaled primitive vectors for your unit cell, guesses for lattice parameters (these get multiplied by the unscaled primitive vectors), and a list of scales at least 4 elements long.
 
@@ -51,7 +53,7 @@ The post processing assumes no unit cell relaxation happens during a single call
 * **Delete scale and primitve vector lines from crystal file**
 * I like to put the pseudopotentials in the main directory and symlink up to them to save space
 
-## Setup for abinit
+## Setup for Abinit
 * Create a directory called templatedir/
 * Put all abinit input files in templatedir/ (usually just a files file and input file, and possibly pseudopotentials)
 * The files file should be named *files* and the input file should be named *abinit.in.template*
@@ -69,11 +71,11 @@ Using the included example script,
 ```bash
 $ pytest example_run.py
 ```
-This should run N instances of the dft code in labeled work directories. The calculated energies are written to *energies.dat* and the fitted murnaghan parameters including lattice constant and bulk modulus are written to *murnaghan_paramters.dat*.
+This should run N instances of the dft code in labeled work directories. The calculated energies are written to *energies.dat* and the fitted murnaghan parameters including lattice constant and bulk modulus are written to *murnaghan_parameters.dat*.
 
 ## Results
 * *energies.dat* contains raw data
-* *murnaghan_paramters.dat* contains fitted murnaghan parameters
+* *murnaghan_parameters.dat* contains fitted murnaghan parameters
 * *plot_murnaghan.py* will plot the fit and raw data vs both volume and scale *a*. It can be modified to plot against other lattice vector scale values if needed. 
 
 ## Notes
