@@ -39,12 +39,19 @@ For example, for the Nth scale tested, the lattice vectors will be
 s[N]*abc_guess[i]*pvu[i] for i=0,1,2
 ```
 
-### Notes for two-dimensional materials
-for two-dimensional materials, set two_dim=True when instantiating the LatticeParameterSweep object. Tis tells the code to scale only the a and ba lattice parameters and leave c fixed. For example:
-```python
-sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu, two_dim=True)
-```
 The post processing assumes no unit cell relaxation happens during a single call to the dft code (atomic position relaxation is okay).
+
+### Notes for two-dimensional materials
+For two-dimensional materials, set two_dim=True when instantiating the LatticeParameterSweep object. This option tells the code to scale only the *a* and *b* lattice parameters while leaving *c* fixed. For example:
+```python
+sweep = m.LatticeParameterSweep(ed, tf, s, abcg, prim_vec_unscaled=pvu, two_dim=True)
+```
+
+### Alternative unit cell setup using lattice vector angles
+As an alternative to specifying the unscaled lattice vectors, *prim_vec_unscaled*, you can instead specify the angles between vectors, *angles*. This will internally create unscaled primitive vectors of unit length which are then scaled as above by *abc_guess* and *scale*. For example:
+```python
+sweep = m.LatticeParameterSweep(ed, tf, s, abcg, angles=[90, 90, 120])
+```
 
 ## Setup for Socorro
 * Create a directory called templatedir/
@@ -77,6 +84,7 @@ This should run N instances of the dft code in labeled work directories. The cal
 * *energies.dat* contains raw data
 * *murnaghan_parameters.dat* contains fitted murnaghan parameters
 * *plot_murnaghan.py* will plot the fit and raw data vs both volume and scale *a*. It can be modified to plot against other lattice vector scale values if needed. 
+* Be sure to carefully examine the input files and output files in the work directories, as well as the final raw data to make sure everything was set up and run correctly.
 
 ## Notes
 * "invalid error encountered in power" error usually means raw energy data is bad. You can read energies.dat or visualize with plot_murnaghan.py
