@@ -207,9 +207,9 @@ class LatticeParameterSweep(object):
 
     def _setup_workdir(self, dir_name):
         if self.energy_driver=='abinit':
-            shutil.copytree('templatedir', dir_name)
+            shutil.copytree('templatedir', dir_name, symlinks=True)
         elif self.energy_driver=='socorro':
-            shutil.copytree('templatedir', dir_name)
+            shutil.copytree('templatedir', dir_name, symlinks=True)
             this_dir = os.getcwd()
             os.chdir(dir_name)
             os.mkdir('data')
@@ -219,7 +219,7 @@ class LatticeParameterSweep(object):
                 os.symlink(os.path.join('..', file), file)
             os.chdir(this_dir)
         elif self.energy_driver=='elk':
-            shutil.copytree('templatedir', dir_name)
+            shutil.copytree('templatedir', dir_name, symlinks=True)
         else:
             raise ValueError('Unknown energy driver specified')
 
