@@ -88,3 +88,5 @@ This should run N instances of the dft code in labeled work directories. The cal
 
 ## Notes
 * "invalid error encountered in power" error usually means raw energy data is bad. You can read energies.dat or visualize with plot_murnaghan.py
+* The integration tests call and run their respective dft codes. Thus an integration test will fail if that code is not installed, which is okay if you don't plan to use that code. 
+* The integration tests compare energy and other results from a dft calculation to references results I generated. Your results could be slightly different than mine because of small differences between versions and installations of the code. Because of this, I set some hopefully reasonable tolerances for comparing these results. If an integration test fails because of an assertion error, it could be that the tolerances are still too strict.
