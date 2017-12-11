@@ -395,7 +395,7 @@ def test_integration_socorro():
     # assert murnaghan parameters are correct
     assert np.isclose(sweep.murnaghan_fit.E0, -37.129044175, atol=1e-4, rtol=0)
     assert np.isclose(sweep.murnaghan_fit.B0, 0.00722071666, atol=1e-5, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090  , atol=1e-2, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090, atol=1e-2, rtol=0)
     assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733, atol=1e-1, rtol=0)
 
 def test_integration_elk():
@@ -431,9 +431,9 @@ def test_integration_elk():
 
     # assert volumes and energies are correct
     assert np.isclose(sweep.volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
-    assert np.isclose(sweep.energies_hartree, [-7.515024699, -7.516721695, -7.517852094, -7.518522940, -7.518821210]).all()
+    assert np.isclose(sweep.energies_hartree, [-7.515024699, -7.516721695, -7.517852094, -7.518522940, -7.518821210], atol=1e-3, rtol=0).all()
     # assert murnaghan parameters are correct
-    assert np.isclose(sweep.murnaghan_fit.E0, -7.518850974)
-    assert np.isclose(sweep.murnaghan_fit.B0, 0.00043323874)
-    assert np.isclose(sweep.murnaghan_fit.BP, 3.505576932)
-    assert np.isclose(sweep.murnaghan_fit.V0, 131.193402033)
+    assert np.isclose(sweep.murnaghan_fit.E0, -7.518850974, atol=1e-4, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.B0, 0.00043323874, atol=1e-5, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.BP, 3.505576932, atol=1e-2, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.V0, 131.193402033, atol=1e0, rtol=0)
