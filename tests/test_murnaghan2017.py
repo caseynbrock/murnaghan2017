@@ -391,12 +391,12 @@ def test_integration_socorro():
 
     # assert volumes and energies are correct
     assert np.isclose(sweep.volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
-    assert np.isclose(sweep.energies_hartree, [-37.012225020, -37.042712697, -37.067941736, -37.090042723, -37.106637075]).all()
+    assert np.isclose(sweep.energies_hartree, [-37.012225020, -37.042712697, -37.067941736, -37.090042723, -37.106637075], atol=1e-5, rtol=0).all()
     # assert murnaghan parameters are correct
-    assert np.isclose(sweep.murnaghan_fit.E0, -37.129044175)
-    assert np.isclose(sweep.murnaghan_fit.B0, 0.00722071666)
-    assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090)
-    assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733)
+    assert np.isclose(sweep.murnaghan_fit.E0, -37.129044175, atol=1e-4, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.B0, 0.00722071666, atol=1e-5, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090  , atol=1e-2, rtol=0)
+    assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733, atol=1e-1, rtol=0)
 
 def test_integration_elk():
     """
