@@ -5,7 +5,7 @@ Currently, this is only set up for the Abinit, Socorro, and Elk DFT codes, thoug
 
 If pytest won't work, or the modules can't be found, you can try loading an anaconda module. I've had issues with older versions of pytest
 
-Tested with: python 2.7.12, 2.7.13, 2.7.5, pytest 3.0.7, abinit 8.0.8
+Tested with: python 2.7.12, 2.7.13, 2.7.5, pytest 3.0.7, abinit 8.0.8, elk 2.3.22, 4.3.6
 
 ## Running tests
 In the main directory, run
