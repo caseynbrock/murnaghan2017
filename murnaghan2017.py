@@ -315,8 +315,7 @@ class LatticeParameterSweep(object):
 
         # convert results to other units
         abc_min_angstroms = abc_min * 0.52917725
-        B0_gpa = fit.B0 * 1.8218779e-30 / 5.2917725e-11 / \
-                  4.8377687e-17 / 4.8377687e-17 * 1.e-9
+        B0_GPa = fit.B0 * 2 * 1.8218779e-30 / 5.2917725e-11 /4.8377687e-17 / 4.8377687e-17 * 1.e-9
     
         with open('murnaghan_parameters.dat', 'w') as f:
             f.write('# everything in Hartree atomic units unless specified\n')
@@ -327,7 +326,7 @@ class LatticeParameterSweep(object):
             f.write('\n')
             f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %tuple(abc_min))
             f.write('\n')
-            f.write('B_0 (GPa): %.9f\n' %B0_gpa)
+            f.write('B_0 (GPa): %.9f\n' %B0_GPa)
             f.write('abc_0 (angstroms): %.9f  %.9f  %.9f\n' %tuple(abc_min_angstroms))
 
 
