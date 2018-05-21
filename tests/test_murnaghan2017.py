@@ -24,7 +24,7 @@ class TemporaryDirectory(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.start_dir)
-        shutil.rmtree(self.name)
+        #shutil.rmtree(self.name)
 
 def test_angles_prim_vec_neither():
     """
@@ -32,10 +32,11 @@ def test_angles_prim_vec_neither():
     """
     energy_driver = None
     template_file = None
-    abc_guess = []
-    s = []
+    #abc_guess = []
+    #s = []
+    abc = []
     with pytest.raises(ValueError):
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess)
+        m.DftRun(energy_driver, template_file, abc)
 
 def test_angles_prim_vec_both():
     """
@@ -43,34 +44,21 @@ def test_angles_prim_vec_both():
     """
     energy_driver = None
     template_file = None
-    abc_guess = []
-    s = []
+    abc = []
     with pytest.raises(ValueError):
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, angles=1, prim_vec_unscaled=[])
-
-def test_angles_None_when_prim_vec_specified():
-    """
-    if prim_vec is specified, self.angles=None
-    """
-    energy_driver = None
-    template_file = None
-    s = []
-    abc_guess = []
-    sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=[])
-    assert sweep.angles is None
+        m.DftRun(energy_driver, template_file, abc, angles=[90, 90, 90], prim_vec_unscaled=[] )
 
 def test_preprocess_file_bad():
     """
     entering bad name for energy driver raises value error
     """
-    energy_driver = 'dummy'
+    energy_driver = 'bad_energy_driver_name'
     template_file = None
-    s = [0.5, 1.0, 1.5]
-    abc_guess = [1,2,3]
-    pvu = [[1,1,0], [0,1,1], [1,0,1]]
-    sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
+    pvu = []
+    abc = []
+    run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
     with pytest.raises(ValueError):
-        sweep._preprocess_file(0)
+        run._preprocess_file()
 
 def test_preprocess_file_abinit_angdeg():
     """
@@ -82,11 +70,10 @@ def test_preprocess_file_abinit_angdeg():
         energy_driver = 'abinit'
         template_file = os.path.join(input_dir, 'abinit.in.template.example')
         correct_file = os.path.join(input_dir, 'abinit.in.correct')
-        s = [0.9, 1.0, 1.5]
-        abc_guess = [1,2,3]
         ang = [90, 90, 120]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, angles=ang)
-        sweep._preprocess_file(2)
+        abc = [1.5, 3.0, 4.5]
+        run = m.DftRun(energy_driver, template_file, abc, angles=ang)
+        run._preprocess_file()
         # compare written abinit file with correct input file
         with open(correct_file) as f1, open('abinit.in') as f2:
             assert f1.readlines() == f2.readlines()
@@ -102,11 +89,10 @@ def test_preprocess_file_abinit_rprim():
         correct_file = os.path.join(input_dir, 'abinit.in.correct.2')
         energy_driver = 'abinit'
         template_file = os.path.join(input_dir, 'abinit.in.template.example')
-        s = [0.9, 1.0, 1.5]
-        abc_guess = [1,2,4]
+        abc = [1.5,3,6]
         pvu = [[1,1,0], [0,1,1], [1,0,1]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
-        sweep._preprocess_file(2)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        run._preprocess_file()
         # compare written abinit file with correct input file
         with open(correct_file) as f1, open('abinit.in') as f2:
             assert f1.readlines() == f2.readlines()
@@ -122,15 +108,13 @@ def test_preprocess_file_socorro_rprim():
         correct_file = os.path.join(input_dir, 'crystal.correct')
         energy_driver = 'socorro'
         template_file = os.path.join(input_dir, 'crystal.template.example')
-        s = [0.9, 1.0, 1.5]
-        abc_guess = [1,2,4]
+        abc = [1.5, 3, 6] 
         pvu = [[1,1,0], [0,1,1], [1,0,1]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
-        sweep._preprocess_file(2)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        run._preprocess_file()
         # compare written socorro crystal file with correct input file
         with open(correct_file) as f1, open('crystal') as f2:
             assert f1.readlines() == f2.readlines()
-
 
 def test_preprocess_file_elk_rprim():
     """
@@ -142,36 +126,33 @@ def test_preprocess_file_elk_rprim():
         correct_file = os.path.join(input_dir, 'elk.in.correct')
         energy_driver = 'elk'
         template_file = os.path.join(input_dir, 'elk.in.template.example')
-        s = [0.9, 1.0, 1.5]
-        abc_guess = [1,2,4]
+        abc = [1.5, 3, 6] 
         pvu = [[1,1,0], [0,1,1], [1,0,1]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess=abc_guess, prim_vec_unscaled=pvu)
-        sweep._preprocess_file(2)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        run._preprocess_file()
         # compare written elk.in file with correct input file
         with open(correct_file) as f1, open('elk.in') as f2:
             assert f1.readlines() == f2.readlines()
 
-
-
 def test_prim_vec_from_angles_hex():
     energy_driver = None
     template_file = None
-    s = []
+    #s = []
     abc = []
     angles = [90, 90, 120]
-    sweep = m.LatticeParameterSweep(energy_driver, template_file, abc, s, angles=angles)
+    run = m.DftRun(energy_driver, template_file, abc, angles=angles)
     correct_vec = np.array([[1,0,0],[-0.5, np.sqrt(3)/2, 0], [0,0,1]])
-    assert np.isclose(sweep._prim_vec_from_angles(), correct_vec).all()
+    assert np.isclose(run._prim_vec_from_angles(), correct_vec).all()
 
 def test_prim_vec_from_angles_tetr():
     energy_driver = None
     template_file = None
-    s = []
+    #s = []
     abc = []
     angles = [90, 90, 90]
-    sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, angles=angles)
+    run = m.DftRun(energy_driver, template_file, abc, angles=angles)
     correct_vec = np.array([[1,0,0],[0,1,0], [0,0,1]])
-    assert np.isclose(sweep._prim_vec_from_angles(), correct_vec).all()
+    assert np.isclose(run._prim_vec_from_angles(), correct_vec).all()
 
 def test_get_energy_bad():
     """
@@ -179,38 +160,35 @@ def test_get_energy_bad():
     """
     energy_driver = 'bad'
     template_file = None
-    s = []
     abc = []
     pvu = [[1,1,0], [0,1,1], [1,0,1]]
-    sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
+    run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
     with pytest.raises(ValueError):
-        sweep.get_energy()
+        run.get_energy()
 
 def test_abinit_get_energy_single():
     """When only single etotal reported (typical case), returns etotal in Hartree"""
     with TemporaryDirectory() as tmp_dir:
         energy_driver='abinit'
         template_file = None
-        s = []
         abc = []
         pvu = []
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
         shutil.copy(os.path.join(input_dir, 'log.example'), 'log')
-        E = sweep.get_energy()
+        E = run.get_energy()
         assert np.isclose(E, -6.1395717098)
     
 
 def test_abinit_get_energy_multiple():
-    """When only single etotal reported (typical case), returns etotal in Hartree"""
+    """When multiple etotal reported, returns correct etotal in Hartree"""
     with TemporaryDirectory() as tmp_dir:
         energy_driver='abinit'
         template_file = None
-        s = []
         abc = []
         pvu = []
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
         shutil.copy(os.path.join(input_dir, 'log.structurerelax.example'), 'log')
-        E = sweep.get_energy()
+        E = run.get_energy()
         assert np.isclose(E, -7.3655263854)
 
 def test_get_energy_socorro():
@@ -218,12 +196,11 @@ def test_get_energy_socorro():
     with TemporaryDirectory() as tmp_dir:
         energy_driver = 'socorro'
         template_file = None
-        s = []
         abc = []
         pvu = []
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
         shutil.copy(os.path.join(input_dir, 'diaryf.example'), 'diaryf')
-        E = sweep.get_energy()
+        E = run.get_energy()
         assert np.isclose(E, -74.637868487/2.)
 
 def test_get_energy_elk():
@@ -231,49 +208,43 @@ def test_get_energy_elk():
     with TemporaryDirectory() as tmp_dir:
         energy_driver = 'elk'
         template_file = None
-        s = []
         abc = []
         pvu = []
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc, prim_vec_unscaled=pvu)
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
         shutil.copy(os.path.join(input_dir, 'TOTENERGY.OUT.example'), 'TOTENERGY.OUT')
-        E = sweep.get_energy()
+        E = run.get_energy()
         assert np.isclose(E, -7.51826352965)
     
 
 def test_calc_unit_cell_volume():
-    s = [1]
-    abc_guess = [1,2,3]
+    abc = [1,2,3]
     pvu = [[1,0,0], [0,1,0], [0,0,1]]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, prim_vec_unscaled=pvu)
-    assert np.isclose(sweep._calc_unit_cell_volume(0),  6.)
+    run = m.DftRun(None, None, abc, prim_vec_unscaled=pvu)
+    assert np.isclose(run._calc_unit_cell_volume(),  6.)
     
 def test_calc_unit_cell_volume_2():
-    s = [1,2]
-    abc_guess = [4,5,6]
+    abc = [8,10,12]
     pvu = [[2,0,0], [0,3,0], [0,0,1]]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, prim_vec_unscaled=pvu)
-    assert np.isclose(sweep._calc_unit_cell_volume(1),  5760.)
+    run = m.DftRun(None, None, abc, prim_vec_unscaled=pvu)
+    assert np.isclose(run._calc_unit_cell_volume(),  5760.)
     
 def test_calc_unit_cell_volume_3():
-    s = [3]
-    abc_guess = [4,5,6]
+    abc = [12,15,18]
     pvu = [[1,1,0], [0,1,1], [1,0,1]]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, prim_vec_unscaled=pvu)
-    assert np.isclose(sweep._calc_unit_cell_volume(0),  6480.)
+    run = m.DftRun(None, None, abc, prim_vec_unscaled=pvu)
+    assert np.isclose(run._calc_unit_cell_volume(),  6480.)
     
 def test_calc_unit_cell_volume_5():
-    s = [3]
-    abc_guess = [1,2,3]
+    abc = [3,6,9]
     angles = [90,90,90]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, angles=angles)
-    assert np.isclose(sweep._calc_unit_cell_volume(0),  162.)
+    run = m.DftRun(None, None, abc, angles=angles)
+    assert np.isclose(run._calc_unit_cell_volume(),  162.)
     
 def test_calc_unit_cell_volume_6():
-    s = [1]
-    abc_guess = [2,2,10]
+    abc = [2,2,10]
     angles = [90,90,120]
-    sweep = m.LatticeParameterSweep(None, None, s, abc_guess, angles=angles)
-    assert np.isclose(sweep._calc_unit_cell_volume(0), 20*np.sqrt(3))
+    run = m.DftRun(None, None, abc, angles=angles)
+    assert np.isclose(run._calc_unit_cell_volume(), 20*np.sqrt(3))
     
 def test_murnaghan_equation():
     parameters = [1, 2, 3, 4]
@@ -291,14 +262,16 @@ def test_MurnaghanFit():
 
 def test_write_energy_data():
     with TemporaryDirectory() as tmp_dir:
+        correct_file = os.path.join(input_dir, 'energies.dat.correct')
         s = [0.95, 1, 1.1]
         abc_guess = [1,1,2]
+        abc_list = [si*np.array(abc_guess) for si in s]
         pvu = [[1,1,0], [0,1,1], [np.sqrt(3),0,np.sqrt(3)/2]]
-        sweep = m.LatticeParameterSweep('', '', s, abc_guess, prim_vec_unscaled=pvu)
-        sweep.volumes = [1.234567890, 2.345678901, 3.456789012] # fake data
-        sweep.energies_hartree = [4.567890123, 5.678901234, 6.789012345] # fake data
-        sweep._write_energy_data()
-    pass
+        volumes = [1.234567890, 2.345678901, 3.456789012] # fake data
+        energy_list_hartree = [4.567890123, 5.678901234, 6.789012345] # fake data
+        m.write_energy_data(pvu, abc_list, volumes, energy_list_hartree)
+        with open(correct_file) as f1, open('energies.dat') as f2:
+            assert f1.readlines() == f2.readlines()
 
 def test_abc_of_vol():
     abc_guess = [1,2,3]
@@ -310,15 +283,98 @@ def test_abc_of_vol2():
 
 def test_write_murnaghan_data():
     with TemporaryDirectory() as tmp_dir:
+        correct_file = os.path.join(input_dir, 'murnaghan_parameters.dat.correct')
         s = [0.95, 0.975, 1, 1.025, 1.05]
         abc_guess = [6.6, 6.6, 6.6]
+        abc_list = [si*np.array(abc_guess) for si in s]
         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
-        sweep = m.LatticeParameterSweep('', '', s, abc_guess, prim_vec_unscaled=pvu)
-        sweep.volumes = [15.405742687, 16.654272680, 17.968500000, 19.350109195, 20.800784812] # fake data
-        sweep.energies_hartree = [-5.932111434, -6.041456293, -6.139571710, -6.227873609, -6.307476940] # fake data
-        sweep.murnaghan_fit = sweep._fit_sweep_to_murnaghan()
-        sweep._write_murnaghan_data()
-    pass
+        volumes = [15.405742687, 16.654272680, 17.968500000, 19.350109195, 20.800784812] # fake data
+        energies_hartree = [-5.932111434, -6.041456293, -6.139571710, -6.227873609, -6.307476940] # fake data
+        fit = m.MurnaghanFit(volumes, energies_hartree)
+        m.write_murnaghan_data(fit, volumes, abc_list)
+        with open(correct_file) as f1, open('murnaghan_parameters.dat') as f2:
+            assert f1.readlines() == f2.readlines()
+
+
+def test_integration_elk():
+    """
+    lattice paramter sweep and murnaghan fitting should run correctly
+    
+    Requires elk set up correctly. Also, this test is fragile because
+    different elk versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new elk outputs.
+    If the energy values are wrong, the murnaghan paramters will be too.
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        os.mkdir('templatedir')
+        shutil.copy(os.path.join(input_dir, 'elk.in.template.Li'), 
+                    os.path.join('templatedir', 'elk.in.template'))
+        shutil.copy(os.path.join(input_dir, 'Li.in.elkspecies'), 
+                    os.path.join('templatedir', 'Li.in'))
+        # run sweep  in tmp_dir
+        energy_driver = 'elk'
+        template_file = 'elk.in.template'
+        s = [0.95, 0.975, 1, 1.025, 1.05]
+        abc_guess = [7.6, 7.6, 7.6]
+        abc_list = [si*np.array(abc_guess) for si in s]
+        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
+        volumes, energy_list_hartree = m.lattice_parameter_sweep(energy_driver, template_file, abc_list, prim_vec_unscaled=pvu)
+
+        fit = m.MurnaghanFit(volumes, energy_list_hartree)
+        m.write_murnaghan_data(fit, volumes, abc_list)  # don't really need to do this
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('murnaghan_parameters.dat')
+
+    # assert volumes and energies are correct
+    assert np.isclose(volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
+    assert np.isclose(energy_list_hartree, [-7.515024699, -7.516721695, -7.517852094, -7.518522940, -7.518821210], atol=1e-3, rtol=0).all()
+    # assert murnaghan parameters are correct
+    assert np.isclose(fit.E0, -7.518850974, atol=1e-4, rtol=0)
+    assert np.isclose(fit.B0, 0.00043323874, atol=1e-5, rtol=0)
+    assert np.isclose(fit.BP, 3.505576932, atol=1e-2, rtol=0)
+    assert np.isclose(fit.V0, 131.193402033, atol=1e0, rtol=0)
+
+
+def test_integration_socorro():
+    """
+    lattice paramter sweep and murnaghan fitting should run correctly
+    
+    Requires socorro set up correctly. Also, this test is fragile because
+    different socorro versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new socorro outputs.
+    If the energy values are wrong, the murnaghan paramters will be too.
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        shutil.copytree(os.path.join(input_dir, 'socorro_LiF'), 'templatedir')
+        # run sweep  in tmp_dir
+        energy_driver = 'socorro'
+        template_file = 'crystal.template'
+        s = [0.95, 0.975, 1, 1.025, 1.05]
+        abc_guess = [7.6, 7.6, 7.6]
+        abc_list = [si*np.array(abc_guess) for si in s]
+        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
+        volumes, energy_list_hartree = m.lattice_parameter_sweep(energy_driver, template_file, abc_list, prim_vec_unscaled=pvu)
+
+        fit = m.MurnaghanFit(volumes, energy_list_hartree)
+        m.write_murnaghan_data(fit, volumes, abc_list)  # don't really need to do this
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('murnaghan_parameters.dat')
+
+    # assert volumes and energies are correct
+    assert np.isclose(volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
+    assert np.isclose(energy_list_hartree, [-37.012225020, -37.042712697, -37.067941736, -37.090042723, -37.106637075], atol=1e-5, rtol=0).all()
+    # assert murnaghan parameters are correct
+    assert np.isclose(fit.E0, -37.129044175, atol=1e-4, rtol=0)
+    assert np.isclose(fit.B0, 0.00722071666, atol=1e-5, rtol=0)
+    assert np.isclose(fit.BP, 0.643620090, atol=1e-2, rtol=0)
+    assert np.isclose(fit.V0, 156.473079733, atol=1e-1, rtol=0)
+
 
 def test_integration_abinit():
     """
@@ -343,97 +399,22 @@ def test_integration_abinit():
         template_file = os.path.join(input_dir, 'abinit.in.template.Li')
         s = [0.95, 0.975, 1, 1.025, 1.05]
         abc_guess = [3.3, 3.3, 3.3]
+        abc_list = [si*np.array(abc_guess) for si in s]
         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
-        sweep.run_energy_calculations()
-        #shutil.copy('energies.dat', '..')
-        #shutil.copy('murnaghan_parameters.dat', '..')
+        volumes, energy_list_hartree = m.lattice_parameter_sweep(energy_driver, template_file, abc_list, prim_vec_unscaled=pvu)
+
+        fit = m.MurnaghanFit(volumes, energy_list_hartree)
+        m.write_murnaghan_data(fit, volumes, abc_list)  # don't really need to do this
+        # assert data files written (correctly or not)
         # assert data files written (correctly or not)
         assert os.path.exists('energies.dat')
         assert os.path.exists('murnaghan_parameters.dat')
 
     # assert volumes and energies are correct
-    assert np.isclose(sweep.volumes, [15.40574269, 16.65427268, 17.9685, 19.3501092, 20.80078481]).all()
-    assert np.isclose(sweep.energies_hartree, [-5.93211143, -6.04145629, -6.13957171, -6.22787361, -6.30747694], atol=1e-3, rtol=0).all()
+    assert np.isclose(volumes, [15.40574269, 16.65427268, 17.9685, 19.3501092, 20.80078481]).all()
+    assert np.isclose(energy_list_hartree, [-5.93211143, -6.04145629, -6.13957171, -6.22787361, -6.30747694], atol=1e-3, rtol=0).all()
     # assert murnaghan parameters are correct
-    assert np.isclose(sweep.murnaghan_fit.E0, -6.7617490608, atol=1e-4, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.B0, 0.02539667138, atol=1e-4, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.BP, 1.71091944591, atol=1e-1, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.V0, 49.4869248327, atol=1e-2, rtol=0)
-
-
-def test_integration_socorro():
-    """
-    lattice paramter sweep and murnaghan fitting should run correctly
-    
-    Requires socorro set up correctly. Also, this test is fragile because
-    different socorro versions could calulate different energies. If this causes
-    problems in the future, either increase np.isclose tolerance or (worse) update
-    energy values to new socorro outputs.
-    If the energy values are wrong, the murnaghan paramters will be too.
-    """
-    with TemporaryDirectory() as tmp_dir:
-        # set up example input files in temporary directory
-        shutil.copytree(os.path.join(input_dir, 'socorro_LiF'), 'templatedir')
-        # run sweep  in tmp_dir
-        energy_driver = 'socorro'
-        template_file = 'crystal.template'
-        s = [0.95, 0.975, 1, 1.025, 1.05]
-        abc_guess = [7.6, 7.6, 7.6]
-        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
-        sweep.run_energy_calculations()
-        #shutil.copy('energies.dat', '..')
-        #shutil.copy('murnaghan_parameters.dat', '..')
-        # assert data files written (correctly or not)
-        assert os.path.exists('energies.dat')
-        assert os.path.exists('murnaghan_parameters.dat')
-
-    # assert volumes and energies are correct
-    assert np.isclose(sweep.volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
-    assert np.isclose(sweep.energies_hartree, [-37.012225020, -37.042712697, -37.067941736, -37.090042723, -37.106637075], atol=1e-5, rtol=0).all()
-    # assert murnaghan parameters are correct
-    assert np.isclose(sweep.murnaghan_fit.E0, -37.129044175, atol=1e-4, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.B0, 0.00722071666, atol=1e-5, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.BP, 0.643620090, atol=1e-2, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.V0, 156.473079733, atol=1e-1, rtol=0)
-
-def test_integration_elk():
-    """
-    lattice paramter sweep and murnaghan fitting should run correctly
-    
-    Requires elk set up correctly. Also, this test is fragile because
-    different elk versions could calulate different energies. If this causes
-    problems in the future, either increase np.isclose tolerance or (worse) update
-    energy values to new elk outputs.
-    If the energy values are wrong, the murnaghan paramters will be too.
-    """
-    with TemporaryDirectory() as tmp_dir:
-        # set up example input files in temporary directory
-        os.mkdir('templatedir')
-        shutil.copy(os.path.join(input_dir, 'elk.in.template.Li'), 
-                    os.path.join('templatedir', 'elk.in.template'))
-        shutil.copy(os.path.join(input_dir, 'Li.in.elkspecies'), 
-                    os.path.join('templatedir', 'Li.in'))
-        # run sweep  in tmp_dir
-        energy_driver = 'elk'
-        template_file = 'elk.in.template'
-        s = [0.95, 0.975, 1, 1.025, 1.05]
-        abc_guess = [7.6, 7.6, 7.6]
-        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
-        sweep = m.LatticeParameterSweep(energy_driver, template_file, s, abc_guess, prim_vec_unscaled=pvu)
-        sweep.run_energy_calculations()
-        #shutil.copy('energies.dat', '..')
-        #shutil.copy('murnaghan_parameters.dat', '..')
-        # assert data files written (correctly or not)
-        assert os.path.exists('energies.dat')
-        assert os.path.exists('murnaghan_parameters.dat')
-
-    # assert volumes and energies are correct
-    assert np.isclose(sweep.volumes, [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]).all()
-    assert np.isclose(sweep.energies_hartree, [-7.515024699, -7.516721695, -7.517852094, -7.518522940, -7.518821210], atol=1e-3, rtol=0).all()
-    # assert murnaghan parameters are correct
-    assert np.isclose(sweep.murnaghan_fit.E0, -7.518850974, atol=1e-4, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.B0, 0.00043323874, atol=1e-5, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.BP, 3.505576932, atol=1e-2, rtol=0)
-    assert np.isclose(sweep.murnaghan_fit.V0, 131.193402033, atol=1e0, rtol=0)
+    assert np.isclose(fit.E0, -6.7617490608, atol=1e-4, rtol=0)
+    assert np.isclose(fit.B0, 0.02539667138, atol=1e-4, rtol=0)
+    assert np.isclose(fit.BP, 1.71091944591, atol=1e-1, rtol=0)
+    assert np.isclose(fit.V0, 49.4869248327, atol=1e-2, rtol=0)

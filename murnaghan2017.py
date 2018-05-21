@@ -8,29 +8,123 @@ from scipy.optimize import leastsq
 import numpy as np
 
 
-class LatticeParameterSweep(object):
+# class LatticeParameterSweep(object):
+#     """
+#     abc_list = a,b,c values (list of 3-element lists or Nx3 array)
+#     prim_vec_unscaled: unscaled lattice vectors (3x3 array or list of lists)
+#     angles: angles betwen lattice vectors, alpha, beta, gamma 
+# 
+#     Either prim_vec_unscaled or angles needs to be input, but not both. 
+#     If angles is defined, prim_vec_unscaled is calculated from angles and all vectors have length 1.
+# 
+#     The actual primitive vectors for a single dft run are abc_list[i]*prim_vec_unscaled[i],  i=1,2,3
+# 
+#     angles and prim_vec_unscaled are converted to floats for safety
+#     """
+#     def __init__(self, energy_driver, template_file, abc_list, angles=None, prim_vec_unscaled=None):
+#         self.abc_list = np.array(map(float, abc_guess))
+#         self.two_dim = two_dim
+#         self.acell = [s_i*self.abc_guess for s_i in s]
+#         # Initialize instance attributes:
+#         self.volumes = None 
+#         self.energies_hartree = None
+#         self.murnaghan_fit = None
+# 
+#     def run_energy_calculations(self):
+#         """
+#         Uses DFT code to calculate energy at each of the lattice constants specified.
+#     
+#         For each lattice constant in sweep, sets up directory and runs dft code in that directory.
+#         this method sets instance attirbutes: volumes, energies_hartree, murnaghan_fit
+#         """  
+#         # remove old work directories
+#         for f in glob.glob('workdir.*'):
+#             shutil.rmtree(f)
+#         
+#         # run dft calculations and return calculated energies
+#         main_dir = os.getcwd()
+#         energy_list_hartree = []
+#         for i in range(len(abc_list)):
+#             dir_name = 'workdir.'+str(i)
+#             run = DftRun(energy_driver, template_file, abc_list[i], angles=angles, prim_vec_unscaled=prim_vec_unscaled)
+#             self._setup_workdir(dir_name)
+#             os.chdir(dir_name)
+#             self._preprocess_file(i)
+#             self.run_dft()
+#             energy_list_hartree.append(self.get_energy())
+#             os.chdir(main_dir)
+#         # set instance variables
+#         self.volumes = np.array([self._calc_unit_cell_volume(ind) for ind in range(len(self.s))])
+#         self.energies_hartree = np.array(energy_list_hartree)
+#         self.murnaghan_fit = self._fit_sweep_to_murnaghan()
+#         
+#         # # write raw data and murnaghan fit data to files
+#         # self._write_energy_data()
+#         # self._write_murnaghan_data()
+
+    
+
+def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None, prim_vec_unscaled=None):
+    """ basically a convenience function around the DftRun class """
+    # remove old work directories
+    for f in glob.glob('workdir.*'):
+        shutil.rmtree(f)
+
+    # run dft calculations and return calculated energies
+    main_dir = os.getcwd()
+    energy_list_hartree = []
+    volumes = []
+    for i in range(len(abc_list)):
+        dir_name = 'workdir.'+str(i)
+        run = DftRun(energy_driver, template_file, abc_list[i], angles=angles, prim_vec_unscaled=prim_vec_unscaled)
+        run._setup_workdir(dir_name)
+        os.chdir(dir_name)
+        run._preprocess_file()
+        run.run_dft()
+        energy_list_hartree.append(run.get_energy())
+        volumes.append(run._calc_unit_cell_volume())
+        os.chdir(main_dir)
+
+    write_energy_data(prim_vec_unscaled, abc_list, volumes, energy_list_hartree)
+    return volumes, energy_list_hartree
+
+
+def write_energy_data(prim_vec_unscaled, abc_list, volumes, energy_list_hartree):
+    """ 
+    Writes raw energy data from dft runs.
+
+    The header should contain primitive vectors. 
+    where a,b,c are scaling factors for primitve vectors (bohr)
+    V is the volume of the unit cell (Bohr^3)
+    E_Ha is the total energy in Hartree
+    E_Ry is the total energy in Rydberg
+    E_eV is the total energy in eV
     """
-    abc_guess = guess for a, b, c (list or array, length 3)
-    s: scales (list, length N>4)
-    prim_vec_unscaled: unscaled lattice vectors (3x3 array or list of lists)
-    angles: angles betwen lattice vectors, alpha, beta, gamma 
+    with open('energies.dat', 'w') as fout:
+        fout.write('# Note that a, b, and c are scales and need to be multiplied \n'+
+                   '# by unscaled primitive vectors prim_vec to get actual unit cell vectors\n')
+        fout.write('# unscaled primitive vectors:\n')
+        fout.write('# '+str(prim_vec_unscaled[0]) + '\n')
+        fout.write('# '+str(prim_vec_unscaled[1]) + '\n')
+        fout.write('# '+str(prim_vec_unscaled[2]) + '\n')
+        fout.write('# a (bohr),   b (bohr),   c (bohr),     V (bohr^3),    E (Ha),     E (Ry),      E(eV)\n')
+        for i in range(len(abc_list)):
+            a = abc_list[i][0]
+            b = abc_list[i][1]
+            c = abc_list[i][2]
+            V = volumes[i] 
+            E_Ha = energy_list_hartree[i]
+            E_Ry = E_Ha*2.
+            E_eV = E_Ha*27.21138602
+            fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
+                    %(a, b, c, V, E_Ha, E_Ry, E_eV))
 
-    Either prim_vec_unscaled or angles needs to be input, but not both. 
-    If angles is defined, prim_vec_unscaled is calculated from angles and all vectors have length 1.
 
-    The actual primitive vectors for a single dft run are s*abc_guess[i]*prim_vec_unscaled[i],  i=1,2,3
-
-    need N > 4 because fitting to murnaghan equation
-
-    angles, prim_vec_unscaled, and s are converted to floats for safety
-
-    """
-    def __init__(self, energy_driver, template_file, s, abc_guess, angles=None, prim_vec_unscaled=None, two_dim=False):
+class DftRun(object):
+    def __init__(self, energy_driver, template_file, abc, angles=None, prim_vec_unscaled=None):
         self.energy_driver = energy_driver
         self.template_file = template_file
-        self.s = map(float, s)
-        self.abc_guess = np.array(map(float, abc_guess))
-        self.two_dim = two_dim
+        self.abc = np.array(map(float, abc))
         # set prim_vec_unscaled and maybe angles:
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
         # or angles (useful for hex)
@@ -44,12 +138,6 @@ class LatticeParameterSweep(object):
         else:
             self.angles = np.array(map(float, angles))
             self.prim_vec_unscaled = self._prim_vec_from_angles()
-
-        self.acell = [s_i*self.abc_guess for s_i in s]
-        # Initialize instance attributes:
-        self.volumes = None 
-        self.energies_hartree = None
-        self.murnaghan_fit = None
 
     def _prim_vec_from_angles(self):
         """
@@ -70,7 +158,7 @@ class LatticeParameterSweep(object):
         chat = [c1, c2, c3]
         return np.array([ahat, bhat, chat])
     
-    def _calc_unit_cell_volume(self, ind):
+    def _calc_unit_cell_volume(self):
         """
         Calculate volume of unit cell from primitive vectors.
         (a*b*c) * u.(vxw) where u,v,w are the unscaled prmitive vectors
@@ -78,132 +166,15 @@ class LatticeParameterSweep(object):
  
         ind is index of s to use
         """        
-        a = self.acell[ind][0]
-        b = self.acell[ind][1]
-        c = self.acell[ind][2]
+        a = self.abc[0]
+        b = self.abc[1]
+        c = self.abc[2]
         u = self.prim_vec_unscaled[0]
         v = self.prim_vec_unscaled[1]
         w = self.prim_vec_unscaled[2]
         V_unscaled = np.dot(u, np.cross(v,w))
         V = a*b*c*V_unscaled
         return V
-
-
-    def _preprocess_file(self, ind):
-        """
-        wraps the specific file preprocess functions for different dft codes
-        """
-        if self.energy_driver=='abinit':
-            self._preprocess_file_abinit(ind)
-        elif self.energy_driver=='socorro':
-            self._preprocess_file_socorro(ind)
-        elif self.energy_driver=='elk':
-            self._preprocess_file_elk(ind)
-        else:
-            raise ValueError('Unknown energy driver specified')
-
-    def _preprocess_file_abinit(self, ind):
-        """
-        writes abinit.in from template and appends lattice vector lengths (acell) and 
-        EITHER angles (angdeg) or primitive vectors (rprim), depending on which was 
-        passed in to the LatticeVectorSweep object
-        """
-        shutil.copy2(self.template_file, 'abinit.in')
-        if self.angles is not None:
-            with open('abinit.in', 'a') as f:
-                f.write('acell ' + ' '.join([str(float(n)) for n in self.acell[ind]]) + '\n')
-                f.write('angdeg ' + ' '.join([str(float(n)) for n in self.angles]) + '\n')
-        else:
-            with open('abinit.in', 'a') as f:
-                f.write('acell ' + ' '.join([str(float(n)) for n in self.acell[ind]]) + '\n')
-                f.write('rprim ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[0]]) + '\n')
-                f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
-                f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
-
-    def _preprocess_file_socorro(self, ind):
-        """
-        writes crystal file from template with lattice vectors and scale
-
-        Socorro only accepts one scale value (as opposed to 3), so the scale is specified as
-        acell[0]
-        and the primitve vectors are
-        prim_vec_unscaled[0]
-        acell[1]/acell[0] * prim_vec_unscaled[1]
-        acell[2]/acell[0] * prim_vec_unscaled[2]
-        """
-        try:
-            shutil.copy2(self.template_file, 'crystal.template')
-        except shutil.Error:
-            pass
-        if self.angles is not None:
-            with open('crystal', 'a') as f:
-                raise ValueError('angdeg input not implemented for socorro yet')
-        else:
-            this_acell = self.acell[ind]
-            scale = this_acell[0]
-            prim_vec_0 = self.prim_vec_unscaled[0]
-            prim_vec_1 = this_acell[1]/this_acell[0] * self.prim_vec_unscaled[1]
-            prim_vec_2 = this_acell[2]/this_acell[0] * self.prim_vec_unscaled[2]
-            with open('crystal.template', 'r') as fin:
-                template = fin.readlines()
-            template.insert(1, '  '+str(scale)+'\n')
-            template.insert(2, '    ' + ' '.join(map(str, prim_vec_0)) + '\n')
-            template.insert(3, '    ' + ' '.join(map(str, prim_vec_1)) + '\n')
-            template.insert(4, '    ' + ' '.join(map(str, prim_vec_2)) + '\n')
-            with open('crystal', 'w') as fout:
-                for line in template:
-                    fout.write(line)
-
-    def _preprocess_file_elk(self, ind):
-        """
-        writes elk.in from template and appends lattice vector lengths (scale1, scale2, scale3) and 
-        primitive vectors (avec)
-        """
-        shutil.copy2(self.template_file, 'elk.in')
-        if self.angles is not None:
-            raise ValueError('angdeg input not implemented for elk yet')
-        else:
-            with open('elk.in', 'a') as f:
-                scale123 = self.acell[ind]
-                f.write('\nscale1\n  ' + str(float(scale123[0])) + '\n')
-                f.write('\nscale2\n  ' + str(float(scale123[1])) + '\n')
-                f.write('\nscale3\n  ' + str(float(scale123[2])) + '\n')
-                f.write('\navec\n') 
-                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[0]]) + '\n')
-                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
-                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
-
-
-    def run_energy_calculations(self):
-        """
-        Uses DFT code to calculate energy at each of the lattice constants specified.
-    
-        For each lattice constant in sweep, sets up directory and runs dft code in that directory.
-        this method sets instance attirbutes: volumes, energies_hartree, murnaghan_fit
-        """  
-        # remove old work directories
-        for f in glob.glob('workdir.*'):
-            shutil.rmtree(f)
-        
-        # run dft calculations and return calculated energies
-        main_dir = os.getcwd()
-        energy_list_hartree = []
-        for i in range(len(self.s)):
-            dir_name = 'workdir.'+str(i)
-            self._setup_workdir(dir_name)
-            os.chdir(dir_name)
-            self._preprocess_file(i)
-            self.run_dft()
-            energy_list_hartree.append(self.get_energy())
-            os.chdir(main_dir)
-        # set instance variables
-        self.volumes = np.array([self._calc_unit_cell_volume(ind) for ind in range(len(self.s))])
-        self.energies_hartree = np.array(energy_list_hartree)
-        self.murnaghan_fit = self._fit_sweep_to_murnaghan()
-        
-        # write raw data and murnaghan fit data to files
-        self._write_energy_data()
-        self._write_murnaghan_data()
 
     def _setup_workdir(self, dir_name):
         if self.energy_driver=='abinit':
@@ -223,6 +194,88 @@ class LatticeParameterSweep(object):
         else:
             raise ValueError('Unknown energy driver specified')
 
+    def _preprocess_file(self):
+        """
+        wraps the specific file preprocess functions for different dft codes
+        """
+        if self.energy_driver=='abinit':
+            self._preprocess_file_abinit()
+        elif self.energy_driver=='socorro':
+            self._preprocess_file_socorro()
+        elif self.energy_driver=='elk':
+            self._preprocess_file_elk()
+        else:
+            raise ValueError('Unknown energy driver specified')
+
+    def _preprocess_file_abinit(self):
+        """
+        writes abinit.in from template and appends lattice vector lengths (acell) and 
+        EITHER angles (angdeg) or primitive vectors (rprim), depending on which was 
+        passed in to the LatticeVectorSweep object
+        """
+        shutil.copy2(self.template_file, 'abinit.in')
+        if self.angles is not None:
+            with open('abinit.in', 'a') as f:
+                f.write('acell ' + ' '.join([str(float(n)) for n in self.abc]) + '\n')
+                f.write('angdeg ' + ' '.join([str(float(n)) for n in self.angles]) + '\n')
+        else:
+            with open('abinit.in', 'a') as f:
+                f.write('acell ' + ' '.join([str(float(n)) for n in self.abc]) + '\n')
+                f.write('rprim ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[0]]) + '\n')
+                f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
+                f.write('      ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
+
+    def _preprocess_file_socorro(self):
+        """
+        writes crystal file from template with lattice vectors and scale
+
+        Socorro only accepts one scale value (as opposed to 3), so the scale is specified as
+        acell[0]
+        and the primitve vectors are
+        prim_vec_unscaled[0]
+        acell[1]/acell[0] * prim_vec_unscaled[1]
+        acell[2]/acell[0] * prim_vec_unscaled[2]
+        """
+        try:
+            shutil.copy2(self.template_file, 'crystal.template')
+        except shutil.Error:
+            pass
+        if self.angles is not None:
+            with open('crystal', 'a') as f:
+                raise ValueError('angdeg input not implemented for socorro yet')
+        else:
+            scale = self.abc[0]
+            prim_vec_0 = self.prim_vec_unscaled[0]
+            prim_vec_1 = self.abc[1]/self.abc[0] * self.prim_vec_unscaled[1]
+            prim_vec_2 = self.abc[2]/self.abc[0] * self.prim_vec_unscaled[2]
+            with open('crystal.template', 'r') as fin:
+                template = fin.readlines()
+            template.insert(1, '  '+str(scale)+'\n')
+            template.insert(2, '    ' + ' '.join(map(str, prim_vec_0)) + '\n')
+            template.insert(3, '    ' + ' '.join(map(str, prim_vec_1)) + '\n')
+            template.insert(4, '    ' + ' '.join(map(str, prim_vec_2)) + '\n')
+            with open('crystal', 'w') as fout:
+                for line in template:
+                    fout.write(line)
+
+    def _preprocess_file_elk(self):
+        """
+        writes elk.in from template and appends lattice vector lengths (scale1, scale2, scale3) and 
+        primitive vectors (avec)
+        """
+        shutil.copy2(self.template_file, 'elk.in')
+        if self.angles is not None:
+            raise ValueError('angdeg input not implemented for elk yet')
+        else:
+            with open('elk.in', 'a') as f:
+                f.write('\nscale1\n  ' + str(float(self.abc[0])) + '\n')
+                f.write('\nscale2\n  ' + str(float(self.abc[1])) + '\n')
+                f.write('\nscale3\n  ' + str(float(self.abc[2])) + '\n')
+                f.write('\navec\n') 
+                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[0]]) + '\n')
+                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[1]]) + '\n')
+                f.write('  ' + ' '.join([str(float(n)) for n in self.prim_vec_unscaled[2]]) + '\n')
+
     def run_dft(self):
         """
         runs dft code in current directory
@@ -239,7 +292,6 @@ class LatticeParameterSweep(object):
                 subprocess.call(['elk'], stdout=log_fout)
         else:
             raise ValueError('Unknown energy driver specified')
-        
         
     def get_energy(self):
         """
@@ -283,81 +335,6 @@ class LatticeParameterSweep(object):
         elk_energy_all_iterations = np.loadtxt('TOTENERGY.OUT')
         elk_energy_hartree = elk_energy_all_iterations[-1]
         return elk_energy_hartree
-    
-    # def run_abinit():
-    #     #call abinit
-    #     with open('log', 'w') as log_fout, open('files','r') as files_fin:
-    #         #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
-    #         subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
-    #     # read energy from log
-    #     energy = abinit_get_energy()
-    
-    def _fit_sweep_to_murnaghan(self):
-        """wrapper around fit_to_murnaghan function that passes volume and energy data from this sweep"""      
-        if len(self.s) < 4:
-            raise ValueError('Murnaghan equation hs 4 parameters...need more points in abc')
-        if self.volumes is None:
-            raise ValueError('No volume data!')
-        if self.energies_hartree is None:
-            raise ValueError('No energy data!')
-        return MurnaghanFit(self.volumes, self.energies_hartree)
-
-    def _write_murnaghan_data(self):
-        """
-        writes fitted murnaghan paramters to file with some useful units
-        
-        to calculate a, b, and c from volume, the original s and abc_guess are needed
-        This assumes isotropic scaling of lattice paramters 
-        """
-        fit = self.murnaghan_fit 
-        # calculate miniumum lattice constant
-        abc_min = abc_of_vol(fit.V0, self.volumes[0], self.acell[0])
-
-        # convert results to other units
-        abc_min_angstroms = abc_min * 0.52917725
-        B0_GPa = fit.B0 * 2 * 1.8218779e-30 / 5.2917725e-11 /4.8377687e-17 / 4.8377687e-17 * 1.e-9
-    
-        with open('murnaghan_parameters.dat', 'w') as f:
-            f.write('# everything in Hartree atomic units unless specified\n')
-            f.write('E_0: %.9f\n' %fit.E0)
-            f.write('B_0 (bulk modulus): %.9g\n' %fit.B0)
-            f.write('B_0p: %.9f\n' %fit.BP)
-            f.write('V_0: %.9f\n' %fit.V0)
-            f.write('\n')
-            f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %tuple(abc_min))
-            f.write('\n')
-            f.write('B_0 (GPa): %.9f\n' %B0_GPa)
-            f.write('abc_0 (angstroms): %.9f  %.9f  %.9f\n' %tuple(abc_min_angstroms))
-
-
-    def _write_energy_data(self):
-        """ 
-        Writes raw energy data from dft runs.
-
-        The header should contain primitive vectors. 
-        where a,b,c are scaling factors for primitve vectors (bohr)
-        V is the volume of the unit cell (Bohr^3)
-        E_Ha is the total energy in Hartree
-        E_eV is the total energy in eV
-        """
-        with open('energies.dat', 'w') as fout:
-            fout.write('# Note that a, b, and c are scales and need to be multiplied \n'+
-                       '# by unscaled primitive vectors prim_vec to get actual unit cell vectors\n')
-            fout.write('# unscaled primitive vectors:\n')
-            fout.write('# '+str(self.prim_vec_unscaled[0]) + '\n')
-            fout.write('# '+str(self.prim_vec_unscaled[1]) + '\n')
-            fout.write('# '+str(self.prim_vec_unscaled[2]) + '\n')
-            fout.write('# a (bohr),   b (bohr),   c (bohr),   V (bohr^3), E (Ha),     E(eV)\n')
-            for i in range(len(self.s)):
-                a = self.acell[i][0]
-                b = self.acell[i][1]
-                c = self.acell[i][2]
-                V = self.volumes[i] 
-                E_Ha = self.energies_hartree[i]
-                E_eV = E_Ha*27.21138602
-                fout.write('%.9f   %.9f   %.9f   %.9f   %.9f   %.9f \n'
-                        %(a, b, c, V, E_Ha, E_eV))
-
 
 
 class MurnaghanFit(object):
@@ -398,6 +375,33 @@ class MurnaghanFit(object):
     def _objective(self,pars,y,x):
         err = y -  murnaghan_equation(pars,x)
         return err
+
+def write_murnaghan_data(fit, volumes, abc_list):
+    """
+    writes fitted murnaghan paramters to file with some useful units
+    
+    to calculate a, b, and c from volume, the original s and abc_guess are needed
+    This assumes isotropic scaling of lattice paramters 
+    """
+    # calculate miniumum lattice constant
+    abc_min = abc_of_vol(fit.V0, volumes[0], abc_list[0])
+
+    # convert results to other units
+    abc_min_angstroms = abc_min * 0.52917725
+    B0_GPa = fit.B0 * 2 * 1.8218779e-30 / 5.2917725e-11 /4.8377687e-17 / 4.8377687e-17 * 1.e-9
+
+    with open('murnaghan_parameters.dat', 'w') as f:
+        f.write('# everything in Hartree atomic units unless specified\n')
+        f.write('E_0: %.9f\n' %fit.E0)
+        f.write('B_0 (bulk modulus): %.9g\n' %fit.B0)
+        f.write('B_0p: %.9f\n' %fit.BP)
+        f.write('V_0: %.9f\n' %fit.V0)
+        f.write('\n')
+        f.write('abc_0, lattice vector scales at minimum energy: %.9f  %.9f  %.9f\n' %tuple(abc_min))
+        f.write('\n')
+        f.write('B_0 (GPa): %.9f\n' %B0_GPa)
+        f.write('abc_0 (angstroms): %.9f  %.9f  %.9f\n' %tuple(abc_min_angstroms))
+
     
 def murnaghan_equation(parameters, vol):
     """murnaghan equation of state"""
@@ -432,7 +436,3 @@ def abc_of_vol(V, V_in, abc_in, two_dim=False):
         b = a*bg/ag
         c = a*cg/ag
         return np.array([a,b,c])
-
-
-
-

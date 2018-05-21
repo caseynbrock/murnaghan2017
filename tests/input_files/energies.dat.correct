@@ -1,0 +1,10 @@
+# Note that a, b, and c are scales and need to be multiplied 
+# by unscaled primitive vectors prim_vec to get actual unit cell vectors
+# unscaled primitive vectors:
+# [1, 1, 0]
+# [0, 1, 1]
+# [1.7320508075688772, 0, 0.8660254037844386]
+# a (bohr),   b (bohr),   c (bohr),     V (bohr^3),    E (Ha),     E (Ry),      E(eV)
+0.950000000   0.950000000   1.900000000   1.234567890   4.567890123   9.135780246   124.298621434 
+1.000000000   1.000000000   2.000000000   2.345678901   5.678901234   11.357802468   154.530773648 
+1.100000000   1.100000000   2.200000000   3.456789012   6.789012345   13.578024690   184.738435614 
