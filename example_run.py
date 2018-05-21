@@ -1,4 +1,5 @@
 import murnaghan2017 as m 
+import numpy as np
 
 energy_driver = 'abinit'
 # template file is usually 'abinit.in.template' for abinit, 
