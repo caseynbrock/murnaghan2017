@@ -1,10 +1,10 @@
 # everything in Hartree atomic units unless specified
-E_0: -6.761939839
-B_0 (bulk modulus): 0.0253652893
-B_0p: 1.711369410
-V_0: 49.509303106
+E_0: -7.518851002
+B_0 (bulk modulus): 0.000433261789
+B_0p: 3.505747298
+V_0: 131.192891163
 
-abc_0, lattice vector scales at minimum energy: 9.252709602  9.252709602  9.252709602
+abc_0, lattice vector scales at minimum energy: 7.004660777  7.004660777  7.004660777
 
-B_0 (GPa): 746.272981042
-abc_0 (angstroms): 4.896323422  4.896323422  4.896323422
+B_0 (GPa): 12.747008820
+abc_0 (angstroms): 3.706707127  3.706707127  3.706707127

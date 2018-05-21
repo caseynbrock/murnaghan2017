@@ -281,6 +281,7 @@ def test_abc_of_vol2():
     abc_guess = [1,2,3]
     assert np.isclose(m.abc_of_vol(48, 6, abc_guess), [2,4,6]).all()
 
+
 def test_write_murnaghan_data():
     with TemporaryDirectory() as tmp_dir:
         correct_file = os.path.join(input_dir, 'murnaghan_parameters.dat.correct')
@@ -288,9 +289,13 @@ def test_write_murnaghan_data():
         abc_guess = [6.6, 6.6, 6.6]
         abc_list = [si*np.array(abc_guess) for si in s]
         pvu = [[0.5,0.5,-0.5], [-0.5,0.5,0.5], [0.5,-0.5,0.5]]
-        volumes = [15.405742687, 16.654272680, 17.968500000, 19.350109195, 20.800784812] # fake data
-        energies_hartree = [-5.932111434, -6.041456293, -6.139571710, -6.227873609, -6.307476940] # fake data
+        volumes = [94.091762000, 101.717255250, 109.744000000, 118.182284750, 127.042398000]
+        energies_hartree = [-7.515024550, -7.516721665, -7.517852086, -7.518522990, -7.518821239]
         fit = m.MurnaghanFit(volumes, energies_hartree)
+        fit.E0 = -7.518851002  # fake results
+        fit.B0 = 0.000433261789  # fake results
+        fit.BP = 3.505747298  # fake results
+        fit.V0 = 131.192891163  # fake results
         m.write_murnaghan_data(fit, volumes, abc_list)
         with open(correct_file) as f1, open('murnaghan_parameters.dat') as f2:
             assert f1.readlines() == f2.readlines()
