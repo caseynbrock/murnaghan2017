@@ -1,7 +1,6 @@
 import murnaghan2017 as m 
 import numpy as np
 
-
 # EXAMPLE RUN FOR BCC STRUCTURE USING MURNAGHAN EOS AND
 # THE ABINIT CODE.
 # THE TEMPLATEDIR DIRECTORY WITH THE TEMPLATE FILE
@@ -36,7 +35,7 @@ m.write_murnaghan_data(fit, volumes, abc_list)
 # # THE TEMPLATEDIR DIRECTORY WITH THE CRYSTAL TEMPLATE
 # # AND PSEUDOPOTENTIALS/PAWs NEEDS TO BE SET UP AS DESCRIBED
 # # IN THE README 
-#
+
 # energy_driver = 'socorro'
 # # template file is usually 'abinit.in.template' for abinit, 
 # # 'crystal.template' for socorro, 
