@@ -35,11 +35,15 @@ $ python -m pytest tests/test_murnaghan2017.py
 If you don't have Abinit, Socorro, or Elk set up on your computer, then the corresponding integration tests will fail.
 
 ## General setup
-You will need to create a python script which imports the murnaghan2017 module, sets up the lattice parameter sweep, and does the post processing. This repository includes an example script, *example_run.py*, which you can start with and modify for your system. The dft code to use and the template file are specified in this script. You will also need to specify the unscaled primitive vectors for your unit cell, guesses for lattice parameters (these get multiplied by the unscaled primitive vectors), and a list of scales at least 4 elements long.
+You will need to create a python script which imports the murnaghan2017 module, sets up the lattice parameter sweep, and does the post processing. This repository includes an example script, *example_run.py*, which you can start with and modify for your system. The dft code to use and the template file are specified in this script. You will also need to specify the unscaled primitive vectors for your unit cell, and the lattice vector scales to sweep. The lattice vector scales get multiplied by the unscaled primitive vectors.
 
-For example, for the Nth scale tested, the lattice vectors will be
+For example, for the Nth lattice parameters tested, the lattice vectors will be
 ```latex
-s[N]*abc_guess[i]*pvu[i] for i=0,1,2
+abc_list[N,i]*pvu[i,:] for i=0,1,2
+```
+with lattice parameters
+```latex
+abc_list[N,i]*|pvu[i,:]| for i=0,1,2
 ```
 
 The post processing assumes no unit cell relaxation happens during a single call to the dft code (atomic position relaxation is okay).
