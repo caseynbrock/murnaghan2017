@@ -1,7 +1,7 @@
 # murnaghan2017
-Fit Murnaghan equation of state to energy/volume data. Also, easily calculate energy/volume data using some DFT codes.
+Calculate energy vs. lattice parameter data using some DFT codes with an easy to use Python interface. Also, fit Murnaghan equation of state to energy vs. volume data, or a bivariate cubic polynomial to energy data on a grid of two lattice parameters (useful, for example, in hexagonal structures).
 
-Currently, this is only set up for the Abinit, Socorro, and Elk DFT codes, though others could be added easily.
+Currently, this is set up for the Abinit, Socorro, and Elk DFT codes, though others could be added easily.
 
 If pytest won't work, or the modules can't be found, you can try loading an anaconda module. I've had issues with older versions of pytest
 
