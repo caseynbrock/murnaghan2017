@@ -28,7 +28,10 @@ or to run a specific test
 ```bash
 $ pytest tests/test_murnaghan2017.py::test_preprocess_file_abinit_rprim
 ```
-
+or if the above pytest commands don't work
+```bash
+$ python -m pytest tests/test_murnaghan2017.py
+```
 If you don't have Abinit, Socorro, or Elk set up on your computer, then the corresponding integration tests will fail.
 
 ## General setup
