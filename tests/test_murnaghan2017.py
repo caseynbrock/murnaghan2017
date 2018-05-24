@@ -20,6 +20,7 @@ class TemporaryDirectory(object):
         self.start_dir = os.getcwd()
         self.name = tempfile.mkdtemp(dir=main_dir)
         os.chdir(self.name)
+        print self.name
         return self.name
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -281,6 +282,32 @@ def test_abc_of_vol2():
     abc_guess = [1,2,3]
     assert np.isclose(m.abc_of_vol(48, 6, abc_guess), [2,4,6]).all()
 
+def test_Poly2Dfit():
+    x = [5.850600000, 5.850600000, 5.850600000, 5.850600000, 5.850600000,
+         5.910300000, 5.910300000, 5.910300000, 5.910300000, 5.910300000,
+         5.970000000, 5.970000000, 5.970000000, 5.970000000, 5.970000000,
+         6.029700000, 6.029700000, 6.029700000, 6.029700000, 6.029700000,
+         6.089400000, 6.089400000, 6.089400000, 6.089400000, 6.089400000]
+    y = [9.506000000, 9.603000000, 9.700000000, 9.797000000, 9.894000000,
+         9.506000000, 9.603000000, 9.700000000, 9.797000000, 9.894000000,
+         9.506000000, 9.603000000, 9.700000000, 9.797000000, 9.894000000,
+         9.506000000, 9.603000000, 9.700000000, 9.797000000, 9.894000000,
+         9.506000000, 9.603000000, 9.700000000, 9.797000000, 9.894000000]
+    z = [-637.087902252, -637.089311103, -637.090170987, -637.090445458, -637.090226054,
+         -637.090573150, -637.091802939, -637.092481531, -637.092640128, -637.092279140,
+         -637.092024592, -637.093100621, -637.093620462, -637.093592100, -637.093099222,
+         -637.092325416, -637.093229113, -637.093620853, -637.093480400, -637.092878369,
+         -637.091598554, -637.092424577, -637.092614509, -637.092331806, -637.091584973]
+    polynomial_coefficients_correct = [-5.96833484e+02, -1.21294313e+01, -3.97365056e+00,  1.62409213e+00,
+                                        2.82249323e-01,  2.86799395e-01, -7.70793542e-02, -9.01258094e-03,
+                                       -7.69390584e-03, -7.31762636e-03]
+    equilibrium_lattice_parameters_correct =  [5.99737564, 9.7344405]
+    E_min_correct = -637.093782357
+    fit = m.Poly2DFit(x, y, z)
+    assert np.isclose(fit.coeff, polynomial_coefficients_correct).all()
+    assert np.isclose(fit.min_xy, equilibrium_lattice_parameters_correct).all()
+    assert np.isclose(fit.min_E, -637.093810214)
+
 
 def test_write_murnaghan_data():
     with TemporaryDirectory() as tmp_dir:
@@ -298,6 +325,20 @@ def test_write_murnaghan_data():
         fit.V0 = 131.192891163  # fake results
         m.write_murnaghan_data(fit, volumes, abc_list)
         with open(correct_file) as f1, open('murnaghan_parameters.dat') as f2:
+            assert f1.readlines() == f2.readlines()
+
+
+def test_write_Poly2D_data():
+    with TemporaryDirectory() as tmp_dir:
+        correct_file = os.path.join(input_dir, 'poly2d_parameters.dat.correct')
+        fit = type('', (), {})()  # fake object
+        fit.coeff = [-4.65217793e+02, -5.57206712e+01, -3.38089647e+01,
+                     4.58462590e+00, -9.04248330e-01,  4.61461726e-02,
+                     1.71821865e+00, -5.58679207e-01,  1.09713642e+01, 1.234]
+        fit.min_xy =  [5.9997302, 9.73756115]
+        fit.min_E = -637.093810214
+        m.write_poly2d_data(fit)
+        with open(correct_file) as f1, open('poly2d_parameters.dat') as f2:
             assert f1.readlines() == f2.readlines()
 
 
@@ -379,6 +420,69 @@ def test_integration_socorro():
     assert np.isclose(fit.B0, 0.00722071666, atol=1e-5, rtol=0)
     assert np.isclose(fit.BP, 0.643620090, atol=1e-2, rtol=0)
     assert np.isclose(fit.V0, 156.473079733, atol=1e-1, rtol=0)
+
+
+def test_integration_socorro_Poly2D():
+    """
+    lattice paramter sweep and 2D polynomial fitting should run correctly
+    
+    Requires socorro set up correctly. Also, this test is fragile because
+    different socorro versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new socorro outputs.
+    If the energy values are wrong, the fit paramters will be too.
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        shutil.copytree(os.path.join(input_dir, 'socorro_GaN'), 'templatedir')
+        energy_driver = 'socorro'
+        template_file = 'crystal.template'
+        # create list of a,b,c values to test
+        s_a = [0.995, 1.0, 1.005, 1.01]  # scales for a/b lattice parameters
+        s_c = [0.995, 1.0, 1.005, 1.01]  # scales for c lattice parameter
+        abc_guess = np.array([5.97, 5.97, 9.7])
+        abc_list = []
+        for s1 in s_a:
+            for s2 in s_c:
+                abc_list.append(np.array([s1, s1, s2]) * abc_guess)
+        abc_list = np.array(abc_list)
+
+        angle = 120.*np.pi/180.
+        pvu = [[1.0,  0.0,  0.0],
+               [np.cos(angle),  np.sin(angle),  0.0],
+               [0.0,  0.0,  1.0]]
+        volumes, energy_list_hartree = m.lattice_parameter_sweep(energy_driver, template_file, abc_list, prim_vec_unscaled=pvu)
+
+        a_values = abc_list[:,0]
+        c_values = abc_list[:,2]
+        fit = m.Poly2DFit(a_values, c_values, energy_list_hartree)
+        m.write_poly2d_data(fit)
+
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('poly2d_parameters.dat')
+
+    # assert volumes and energies are correct
+    correct_volumes = [294.930896168, 296.412960973, 297.895025778, 299.377090583,
+                       297.902473340, 299.399470693, 300.896468047, 302.393465400,
+                       300.888945635, 302.400950387, 303.912955139, 305.424959891,
+                       303.890313054, 305.417400054, 306.944487054, 308.471574055]
+    correct_energies = [-637.080005241, -637.080245315, -637.080411884, -637.080209983,
+                        -637.080415094, -637.080655151, -637.080667730, -637.080582546,
+                        -637.080643365, -637.080848369, -637.080823277, -637.080714608,
+                        -637.080655319, -637.080861547, -637.080842684, -637.080622386]
+    assert np.isclose(volumes, correct_volumes).all()
+    assert np.isclose(energy_list_hartree, correct_energies, atol=1e-5, rtol=0).all()
+
+    # assert 2D poly fit parameters are correct
+    print fit.coeff
+    print fit.min_xy
+    print fit.min_E
+    assert np.isclose(fit.coeff, [-629.071534722, 2.300932235, -2.977501186, 
+        -0.622605148, 0.141914732, 0.215972091, 0.027849296, 0.023394877, 
+        -0.020622472, -0.001799476], atol=1e-3, rtol=0).all()
+    assert np.isclose(fit.min_xy, [6.012510409, 9.725896217], atol=1e-5, rtol=0).all()
+    assert np.isclose(fit.min_E, -637.080891910, atol=1e-5, rtol=0)
 
 
 def test_integration_abinit():

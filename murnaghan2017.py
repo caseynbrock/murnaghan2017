@@ -3,8 +3,8 @@ import shutil
 import os 
 import sys
 import glob
+import scipy.optimize
 import subprocess
-from scipy.optimize import leastsq
 import numpy as np
 
 
@@ -64,7 +64,8 @@ import numpy as np
 
     
 
-def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None, prim_vec_unscaled=None):
+def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None, 
+    prim_vec_unscaled=None, dft_command=None):
     """ basically a convenience function around the DftRun class """
     # remove old work directories
     for f in glob.glob('workdir.*'):
@@ -76,7 +77,8 @@ def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None,
     volumes = []
     for i in range(len(abc_list)):
         dir_name = 'workdir.'+str(i)
-        run = DftRun(energy_driver, template_file, abc_list[i], angles=angles, prim_vec_unscaled=prim_vec_unscaled)
+        run = DftRun(energy_driver, template_file, abc_list[i], angles=angles, 
+        prim_vec_unscaled=prim_vec_unscaled, dft_command=dft_command)
         run._setup_workdir(dir_name)
         os.chdir(dir_name)
         run._preprocess_file()
@@ -121,10 +123,12 @@ def write_energy_data(prim_vec_unscaled, abc_list, volumes, energy_list_hartree)
 
 
 class DftRun(object):
-    def __init__(self, energy_driver, template_file, abc, angles=None, prim_vec_unscaled=None):
+    def __init__(self, energy_driver, template_file, abc, angles=None, 
+                 prim_vec_unscaled=None, dft_command=None):
         self.energy_driver = energy_driver
         self.template_file = template_file
         self.abc = np.array(map(float, abc))
+        self.dft_command = dft_command
         # set prim_vec_unscaled and maybe angles:
         # the unit cell can be specified with either primitive vectors (which are scaled by abc)
         # or angles (useful for hex)
@@ -279,17 +283,28 @@ class DftRun(object):
     def run_dft(self):
         """
         runs dft code in current directory
+
+        If dft_run is specified, that command is called. Otherwise, the default
+        command for the specified energy_driver is called.
         """
         if self.energy_driver=='abinit':
             with open('log', 'w') as log_fout, open('files','r') as files_fin:
-                #subprocess.call(['srun', '-n', '64', 'abinit'], stdin=files_fin, stdout=log_fout)
-                subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
+                if self.dft_command is None:
+                    subprocess.call(['abinit'], stdin=files_fin, stdout=log_fout)
+                else:
+                    subprocess.call(self.dft_command.split(), stdin=files_fin, stdout=log_fout)
         elif self.energy_driver=='socorro':
             with open('log', 'w') as log_fout:
-                subprocess.call(['socorro'], stdout=log_fout)
+                if self.dft_command is None:
+                    subprocess.call(['socorro'], stdout=log_fout)
+                else:
+                    subprocess.call(self.dft_command.split(), stdout=log_fout)
         elif self.energy_driver=='elk':
             with open('log', 'w') as log_fout:
-                subprocess.call(['elk'], stdout=log_fout)
+                if self.dft_command is None:
+                    subprocess.call(['elk'], stdout=log_fout)
+                else:
+                    subprocess.call(self.dft_command.split(), stdout=log_fout)
         else:
             raise ValueError('Unknown energy driver specified')
         
@@ -369,11 +384,11 @@ class MurnaghanFit(object):
         B0_guess = 2.*a*V0_guess
         BP_guess = 4.
         murnpars_guess = [E0_guess, B0_guess, BP_guess, V0_guess]
-        murnpars, ier = leastsq(self._objective, murnpars_guess, args=(E_array,vol_array))
+        murnpars, ier = scipy.optimize.leastsq(self._objective, murnpars_guess, args=(E_array,vol_array))
         return murnpars
     
     def _objective(self,pars,y,x):
-        err = y -  murnaghan_equation(pars,x)
+        err = y - murnaghan_equation(pars,x)
         return err
 
 def write_murnaghan_data(fit, volumes, abc_list):
@@ -436,3 +451,61 @@ def abc_of_vol(V, V_in, abc_in, two_dim=False):
         b = a*bg/ag
         c = a*cg/ag
         return np.array([a,b,c])
+
+
+class Poly2DFit(object):
+    """
+    This is used for calculating the equilibrium lattice parameters for materials
+    with two independent lattice parameters (eg. hexagonal, wurtzite). Given energy
+    calculated on a 2D grid of x and y values, where x and y are the lattice 
+    parameters, this calculates a bivariate polynomial fit to the data and finds the x
+    and y values where the energy is minimized.
+    
+    x, y, and z: arrays or lists of same length, x and y are the independent variables
+    z is energy
+
+    attributes: 
+        coeff: coefficients of the fitted polynomial
+        min_xy: x and y where energy is minimized
+        min_E: energy at min_xy in Hartree
+    """
+    def __init__(self, x, y, z):
+        x = np.array(x)
+        y = np.array(y)
+        z = np.array(z) 
+        A = np.array([x*0+1, x, y, x**2, x*y, y**2, x**3, x**2*y, x*y**2, y**3]).T
+        coeff, r, rank, s = np.linalg.lstsq(A, z)
+        self.coeff = coeff  # coefficients of polynomial
+        xy, E = self._find_minimum(x[0], y[0])
+        self.min_xy = xy
+        self.min_E = E
+
+    def _find_minimum(self, x_guess, y_guess):
+        f = lambda xy: poly2d(self.coeff, *xy)
+        results = scipy.optimize.minimize(f, (x_guess, y_guess), method='Nelder-Mead')
+        return results.x, results.fun
+
+
+def poly2d(co, x, y):
+    """ co contains the 10 coefficents of the cubic bivariate polynomial """
+    return co[0] + co[1]*x + co[2]*y + co[3]*x**2 + co[4]*x*y + co[5]*y**2 +co[6]*x**3 + co[7]*x**2*y + co[8]*x*y**2 + co[9]*y**3
+    
+
+def write_poly2d_data(fit):
+    """
+    writes fitted 2D polynomial data to file with some useful units
+    includes calculated lattice parameters
+    """
+    # convert results to other units
+    min_xy_angstroms = [x*0.52917725 for x in fit.min_xy]
+
+    with open('poly2d_parameters.dat', 'w') as f:
+        f.write('E_0 (Ha): %.9f\n' %fit.min_E)
+        f.write('E_0 (Ry): %.9f\n' %(fit.min_E*2.))
+        f.write('lattice parameters (Bohr): %.9f  %.9f\n' %tuple(fit.min_xy))
+        f.write('lattice parameters (angstroms): %.9f  %.9f\n' %tuple(min_xy_angstroms))
+        f.write('\n')
+        f.write('polynomial coefficents for ' +
+            'c0 + c1*x + c2*y + c3*x^2 + c4*x*y + c5*y^2 +c6*x^3 + c7*x^2*y + c8*x*y**2 + c9*y^3\n')
+        f.write('%.9f  %.9f  %.9f  %.9f  %.9f  %.9f  %.9f  %.9f  %.9f  %.9f\n' %tuple(fit.coeff))
+        
