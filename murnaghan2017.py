@@ -8,65 +8,41 @@ import subprocess
 import numpy as np
 
 
-# class LatticeParameterSweep(object):
-#     """
-#     abc_list = a,b,c values (list of 3-element lists or Nx3 array)
-#     prim_vec_unscaled: unscaled lattice vectors (3x3 array or list of lists)
-#     angles: angles betwen lattice vectors, alpha, beta, gamma 
-# 
-#     Either prim_vec_unscaled or angles needs to be input, but not both. 
-#     If angles is defined, prim_vec_unscaled is calculated from angles and all vectors have length 1.
-# 
-#     The actual primitive vectors for a single dft run are abc_list[i]*prim_vec_unscaled[i],  i=1,2,3
-# 
-#     angles and prim_vec_unscaled are converted to floats for safety
-#     """
-#     def __init__(self, energy_driver, template_file, abc_list, angles=None, prim_vec_unscaled=None):
-#         self.abc_list = np.array(map(float, abc_guess))
-#         self.two_dim = two_dim
-#         self.acell = [s_i*self.abc_guess for s_i in s]
-#         # Initialize instance attributes:
-#         self.volumes = None 
-#         self.energies_hartree = None
-#         self.murnaghan_fit = None
-# 
-#     def run_energy_calculations(self):
-#         """
-#         Uses DFT code to calculate energy at each of the lattice constants specified.
-#     
-#         For each lattice constant in sweep, sets up directory and runs dft code in that directory.
-#         this method sets instance attirbutes: volumes, energies_hartree, murnaghan_fit
-#         """  
-#         # remove old work directories
-#         for f in glob.glob('workdir.*'):
-#             shutil.rmtree(f)
-#         
-#         # run dft calculations and return calculated energies
-#         main_dir = os.getcwd()
-#         energy_list_hartree = []
-#         for i in range(len(abc_list)):
-#             dir_name = 'workdir.'+str(i)
-#             run = DftRun(energy_driver, template_file, abc_list[i], angles=angles, prim_vec_unscaled=prim_vec_unscaled)
-#             self._setup_workdir(dir_name)
-#             os.chdir(dir_name)
-#             self._preprocess_file(i)
-#             self.run_dft()
-#             energy_list_hartree.append(self.get_energy())
-#             os.chdir(main_dir)
-#         # set instance variables
-#         self.volumes = np.array([self._calc_unit_cell_volume(ind) for ind in range(len(self.s))])
-#         self.energies_hartree = np.array(energy_list_hartree)
-#         self.murnaghan_fit = self._fit_sweep_to_murnaghan()
-#         
-#         # # write raw data and murnaghan fit data to files
-#         # self._write_energy_data()
-#         # self._write_murnaghan_data()
-
-    
-
 def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None, 
     prim_vec_unscaled=None, dft_command=None):
-    """ basically a convenience function around the DftRun class """
+    """ Runs DFT code at specified list of lattice parameters and returns
+    energies and volumes
+
+    Args:
+        energy_driver (str): DFT code to run: 'elk', 'socorro', 'abinit'
+        template_file (str): template file name. Usually 
+            'abinit.in.template' for abinit, 'crystal.template' for socorro, 
+            or 'elk.in.template' for socorro.
+        abc_list (numpy array of float): N by 3 numpy array containing the 
+            lattice vector scales for each set of lattice vectors to test. Each
+            row contains a value of a, b, and c lattice parameters.
+        angles (3-element array-like, optional): contains the angles between 
+            lattice vectors, alpha, beta, and gamma. Either this or 
+            prim_vec_unscaled must be specified, but not both.
+        prim_vec_unscaled (array-like of float, optional): 3 by 3 array (or 
+            list of lists) of the unscaled lattice vectors. Each will be 
+            multiplied by the lattice vector scales in abc_list. Either this 
+            or angles must be specified, but not both.
+        dft_command (str, optional): Command to call dft code, which can include
+            flags. This is necessary for running in different cluster 
+            environments. Defaults to 'elk', 'abinit', or 'socorro'.
+
+    Returns:
+        list of floats: unit cell volume (Bohr^3) at each set of lattice 
+            parameters tested.
+        list of floats: energy (Ha) at each set of lattice parameters tested.
+
+    Todo:
+        Make templatefile a default to the most likely filename for each energy
+            driver?
+        Pass dft_command from command line. This would make the command more 
+            clear and editable in the batch submission script.
+    """    
     # remove old work directories
     for f in glob.glob('workdir.*'):
         shutil.rmtree(f)
