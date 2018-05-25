@@ -55,10 +55,19 @@ The post processing assumes no unit cell relaxation happens during a single call
 ### Alternative unit cell setup using lattice vector angles
 As an alternative to specifying the unscaled lattice vectors, *prim_vec_unscaled*, you can instead specify the angles between vectors, *angles*. This will internally create unscaled primitive vectors of unit length which are then scaled as above by *abc_list*. For example:
 ```python
-sweep = m.LatticeParameterSweep(ed, tf, s, abcg, angles=[90, 90, 120])
+volumes, energy_list_hartree = murnaghan2017.lattice_parameter_sweep(energy_driver, 
+   template_file, abc_list, angles=[90, 90, 120])
+```
+instead of
+```python
+volumes, energy_list_hartree = murnaghan2017.lattice_parameter_sweep(energy_driver, 
+   template_file, abc_list, prim_vec_unscaled=[[1,0,0],[cos(120),sin(120),0],[0,0,1]])
 ```
 ### More details about lattice parameter sweeps
 For more detailed information on setting up the lattice parameter sweep, see the docstring for murnaghan2017.lattice_parameter_sweep. 
+
+### Fitting energy data and finding equilibrium lattice parameters
+See *example_run.py* for examples using the MurnaghanFit and Poly2DFit classes to fit the energy data and output equilibrium lattice parameters. The Murnaghan fit is useful for materials with only one lattice parameter. The bivariate polynomial fit is useful for materials with two independent lattice parameters, such as hexagonal and wurtzite.
 
 ## Setup for Socorro
 * Create a directory called templatedir/
@@ -80,7 +89,7 @@ For more detailed information on setting up the lattice parameter sweep, see the
 * rename *elk.in* to *elk.in.template*
 * **All keywords and values involving unit cell definition in _elk.in.template_ should be commented or deleted. These include _scale_, _scale1_, _scale2_, _scale3_, and _avec_.**
 
-## Run lattice parameter sweep
+## Run lattice parameter sweep and fit
 Using the included example script,
 ```bash
 $ pytest example_run.py
@@ -88,10 +97,13 @@ $ pytest example_run.py
 This should run N instances of the dft code in labeled work directories. The calculated energies are written to *energies.dat* and the fitted murnaghan parameters including lattice constant and bulk modulus are written to *murnaghan_parameters.dat*.
 
 ## Results
-* *energies.dat* contains raw data
-* *murnaghan_parameters.dat* contains fitted murnaghan parameters
-* *plot_murnaghan.py* will plot the fit and raw data vs both volume and scale *a*. It can be modified to plot against other lattice vector scale values if needed. 
+* *energies.dat* contains raw energy vs. lattice constant and volume data
+* *murnaghan_parameters.dat* contains fitted murnaghan parameters (if a murnaghan fit is performed)
+* *plot_murnaghan.py* will plot the fit and raw data vs both volume and scale *a* (if a murnaghan fit is performed). It can be modified to plot against other lattice vector scale values if needed. 
+* *poly2d_parameters.dat* contains fitted polynomial parameters (if a bivariate polynomial fit is performed)
+* *plot_poly2d.py* will plot the fit and raw data vs *a* and *c* (if a bivariate polynomial fit is performed). It can be modified to plot against other lattice vector scale values if needed. 
 * Be sure to carefully examine the input files and output files in the work directories, as well as the final raw data to make sure everything was set up and run correctly.
+
 
 ## Notes
 * "invalid error encountered in power" error usually means raw energy data is bad. You can read energies.dat or visualize with plot_murnaghan.py
