@@ -25,7 +25,7 @@ class TemporaryDirectory(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.start_dir)
-        #shutil.rmtree(self.name)
+        shutil.rmtree(self.name)
 
 def test_angles_prim_vec_neither():
     """
