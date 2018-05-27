@@ -50,7 +50,7 @@ with lattice parameters
 abc_list[N,i]*|pvu[i,:]| for i=0,1,2
 ```
 
-The post processing assumes no unit cell relaxation happens during a single call to the dft code (atomic position relaxation is okay).
+The post processing assumes no unit cell relaxation happens during a single call to the dft code. Relaxation of atomic positions is okay in theory, but could cause problems because the functions to read the total energy from the DFT code output havn't been tested on output files from structure relaxations.
 
 ### Alternative unit cell setup using lattice vector angles
 As an alternative to specifying the unscaled lattice vectors, *prim_vec_unscaled*, you can instead specify the angles between vectors, *angles*. This will internally create unscaled primitive vectors of unit length which are then scaled as above by *abc_list*. For example:

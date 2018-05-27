@@ -204,6 +204,18 @@ def test_get_energy_socorro():
         E = run.get_energy()
         assert np.isclose(E, -74.637868487/2.)
 
+def test_get_energy_socorro_none():
+    """ raises NoEnergyFromDFT if socorro doesn't complete """
+    with TemporaryDirectory() as tmp_dir:
+        with pytest.raises(m.NoEnergyFromDFT):
+            energy_driver = 'socorro'
+            template_file = None
+            abc = []
+            pvu = []
+            run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+            shutil.copy(os.path.join(input_dir, 'diaryf.noenergy'), 'diaryf')
+            E = run.get_energy()
+    
 def test_get_energy_elk():
     """read cell enrgy from socorro correctly"""
     with TemporaryDirectory() as tmp_dir:

@@ -8,6 +8,9 @@ import subprocess
 import numpy as np
 
 
+class NoEnergyFromDFT(Exception):
+    """raised if total energy not found in DFT output"""
+
 def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None, 
     prim_vec_unscaled=None, dft_command=None):
     """ Runs DFT code at specified list of lattice parameters and returns
@@ -59,9 +62,13 @@ def lattice_parameter_sweep(energy_driver, template_file, abc_list, angles=None,
         os.chdir(dir_name)
         run._preprocess_file()
         run.run_dft()
-        energy_list_hartree.append(run.get_energy())
         volumes.append(run._calc_unit_cell_volume())
-        os.chdir(main_dir)
+        try:
+            energy_list_hartree.append(run.get_energy())
+        except NoEnergyFromDFT:
+            raise
+        finally:
+            os.chdir(main_dir)
 
     write_energy_data(prim_vec_unscaled, abc_list, volumes, energy_list_hartree)
     return volumes, energy_list_hartree
@@ -313,12 +320,25 @@ class DftRun(object):
     def _get_energy_socorro(self):
         """
         reads total energy from socorro diary file
+
+        Assumes no structure relaxation done in socorro run. If there is
+        relaxation, the pre-relaxation energy instead of post-relaxation
+        energy is returned and that is bad.
+
+        When Soccoro encounters some error in the solvers (probably due
+        to bad input), it still returns success. Therefore, I have to 
+        catch this using the fact that the total energy is missing in the
+        diaryf. I could instead check that there are no errors in Socorro's
+        errorf. 
         """
         # reads and returns energy from socorro output file, diaryf
         with open('diaryf', 'r') as diaryf_fin:
             for line in diaryf_fin.readlines():
                 if 'cell energy   ' in line:
                     soc_energy_rydberg = float(line.split()[3])
+                    break
+            else:
+                raise NoEnergyFromDFT
         soc_energy_hartree = soc_energy_rydberg/2.
         return soc_energy_hartree
 
