@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-#import scipy.optimize
 import murnaghan2017 as m
 
 
@@ -33,45 +32,37 @@ def main():
                 next_line = printed_results[i+1]
                 coeff = np.array(map(float, next_line.split()))
 
-    plot_fit(a, c, E, coeff, minimum=minimum)
+    # plot data only
+    plot_data(a, c, E)
+    plt.title('Raw data')
+    plt.show(block=False)
+
+    # plot data and fit
+    fig, ax = plot_data(a, c, E)
+    plt.title('Raw data, fit, and minimum')
+    plot_fit(fig, ax, a, c, coeff, minimum=minimum)
+    plt.show(block=False)
+
+    raw_input('...')
 
 
-# class Poly2DFit(object):
-#     """
-#     z should be a 1D array with length len(x)*len(y)
-#     """
-#     def __init__(self, x, y, z):
-#         A = np.array([x*0+1, x, y, x**2, x**2*y, x**2*y**2, y**2, x*y**2, x*y]).T
-#         coeff, r, rank, s = np.linalg.lstsq(A, z)
-#         self.coeff = coeff  # coefficients of polynomial
-#         xy, E = self._find_minimum(x[0], y[0])
-#         self.min_xy = xy
-#         self.min_E = E
-#         
-#     def _poly2d(self, co, X, Y):
-#         return co[0] + co[1]*X + co[2]*Y + co[3]*X**2 + co[4]*X**2*Y + co[5]*X**2*Y**2 +co[6]*Y**2 + co[7]*X*Y**2 + co[8]*X*Y
-#     
-#     def _find_minimum(self, x_guess, y_guess):
-#         f = lambda xy: self._poly2d(self.coeff, *xy)
-#         results = scipy.optimize.minimize(f, (x_guess, y_guess), method='Nelder-Mead')
-#         return results.x, results.fun
-#         
-#     def write_results():
-#         """ write everything necessary for plot script """
-#         pass
-
-
-def plot_fit(x, y, z, co, minimum=None):
-    """
-    co is coefficients for fit
-    """
+def plot_data(x, y, z):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlabel('a (bohr)')
     ax.set_ylabel('c (bohr)')
     ax.set_zlabel('energy (Ha)')
     ax.scatter(x,y,z)
+    return fig, ax
 
+
+def plot_fit(fig, ax, x, y, co, minimum=None):
+    """
+    co: coefficients for fit        
+    minimum: local (global?) minumum of polynomial
+
+    should be called after plot_data
+    """
     x_fit = np.linspace(x[0], x[-1], 100)
     y_fit = np.linspace(y[0], y[-1], 100)
     X,Y = np.meshgrid(x_fit, y_fit)
@@ -81,8 +72,6 @@ def plot_fit(x, y, z, co, minimum=None):
     if minimum is not None:
         ax.scatter(minimum[0], minimum[1], m.poly2d(co, minimum[0], minimum[1]), color='r')
 
-    plt.show()
-    
 
 if __name__=='__main__':
     main()
