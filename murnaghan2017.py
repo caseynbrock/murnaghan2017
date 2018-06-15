@@ -333,7 +333,8 @@ class DftRun(object):
         """
         # reads and returns energy from socorro output file, diaryf
         with open('diaryf', 'r') as diaryf_fin:
-            for line in diaryf_fin.readlines():
+            # iterate reversed so last energy reported is found
+            for line in reversed(diaryf_fin.readlines()):
                 if 'cell energy   ' in line:
                     soc_energy_rydberg = float(line.split()[3])
                     break

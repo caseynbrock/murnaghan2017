@@ -25,7 +25,7 @@ class TemporaryDirectory(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.start_dir)
-        shutil.rmtree(self.name)
+        #shutil.rmtree(self.name)
 
 def test_angles_prim_vec_neither():
     """
@@ -215,6 +215,19 @@ def test_get_energy_socorro_none():
             run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
             shutil.copy(os.path.join(input_dir, 'diaryf.noenergy'), 'diaryf')
             E = run.get_energy()
+
+def test_get_energy_socorro_relax():
+    """ gets FINAL energy from socorro diaryf if relaxation was performed """
+    with TemporaryDirectory() as tmp_dir:
+        energy_driver = 'socorro'
+        template_file = None
+        abc = []
+        pvu = []
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        shutil.copy(os.path.join(input_dir, 'diaryf.relax'), 'diaryf')
+        E = run.get_energy()
+        assert np.isclose(E, -360.361967002/2.)
+    
     
 def test_get_energy_elk():
     """read cell enrgy from socorro correctly"""
