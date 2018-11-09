@@ -1,1 +1,2 @@
 *.2 linguist-documentation
+tests/input_files/* linguist-documentation
