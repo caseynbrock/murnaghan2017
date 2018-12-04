@@ -83,6 +83,12 @@ See *example_run.py* for examples using the MurnaghanFit and Poly2DFit classes t
 * Set the first line of *files* file to "abinit.in", which is the name of the input files these scripts will create
 * **All keywords and values involving unit cell definition in _abinit.in.template_ should be commented or deleted. These include _acell_, _rprim_, _angdeg_, _scalecart_, _brvltt_, and _spgroup_.**
 
+## Setup for Quantum Espresso
+* Create a directory called templatedir/
+* Put all Quantum Espresso input files in templatedir/ (usually just one input file and possibly pseudopotentials)
+* Rename the main input file to *espresso.in.template*
+* **Delete CELL PARAMETERS section in _espresso.in.template_**.
+
 ## Setup for Elk
 * Create a directory called templatedir/
 * Put your elk input file *elk.in* in templatedir/

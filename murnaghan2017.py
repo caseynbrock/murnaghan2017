@@ -178,6 +178,8 @@ class DftRun(object):
             os.chdir(this_dir)
         elif self.energy_driver=='elk':
             shutil.copytree('templatedir', dir_name, symlinks=True)
+        elif self.energy_driver=='quantumespresso':
+            shutil.copytree('templatedir', dir_name, symlinks=True)
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -191,6 +193,8 @@ class DftRun(object):
             self._preprocess_file_socorro()
         elif self.energy_driver=='elk':
             self._preprocess_file_elk()
+        elif self.energy_driver=='quantumespresso':
+            self._preprocess_file_espresso()
         else:
             raise ValueError('Unknown energy driver specified')
 
@@ -245,6 +249,22 @@ class DftRun(object):
                 for line in template:
                     fout.write(line)
 
+    def _preprocess_file_espresso(self):
+        """
+        writes espresso.in from template and appends primitive vectors
+        """
+        shutil.copy2(self.template_file, 'espresso.in')
+        if self.angles is not None:
+            raise ValueError('angdeg input not implemented for Quantum Espresso yet')
+        else:
+            with open('espresso.in', 'a') as f:
+                prim_vec = self.prim_vec_unscaled * self.abc[:, np.newaxis] # scale each primitive vector
+                print prim_vec
+                f.write('CELL_PARAMETERS bohr\n') 
+                f.write('  ' + ' '.join([str(float(n)) for n in prim_vec[0]]) + '\n')
+                f.write('  ' + ' '.join([str(float(n)) for n in prim_vec[1]]) + '\n')
+                f.write('  ' + ' '.join([str(float(n)) for n in prim_vec[2]]) + '\n')
+
     def _preprocess_file_elk(self):
         """
         writes elk.in from template and appends lattice vector lengths (scale1, scale2, scale3) and 
@@ -282,6 +302,12 @@ class DftRun(object):
                     subprocess.call(['socorro'], stdout=log_fout)
                 else:
                     subprocess.call(self.dft_command.split(), stdout=log_fout)
+        elif self.energy_driver=='quantumespresso':
+            with open('log', 'w') as log_fout, open('espresso.in', 'r') as fin:
+                if self.dft_command is None:
+                    subprocess.call(['pw.x'], stdin=fin, stdout=log_fout)
+                else:
+                    subprocess.call(self.dft_command.split(), stdin=fin, stdout=log_fout)
         elif self.energy_driver=='elk':
             with open('log', 'w') as log_fout:
                 if self.dft_command is None:
@@ -299,6 +325,8 @@ class DftRun(object):
             return self._get_energy_abinit()
         elif self.energy_driver=='socorro':
             return self._get_energy_socorro()
+        elif self.energy_driver=='quantumespresso':
+            return self._get_energy_espresso()
         elif self.energy_driver=='elk':
             return self._get_energy_elk()
         else:
@@ -342,6 +370,29 @@ class DftRun(object):
                 raise NoEnergyFromDFT
         soc_energy_hartree = soc_energy_rydberg/2.
         return soc_energy_hartree
+
+    def _get_energy_espresso(self):
+        """
+        Reads total energy from esppresso out file. 
+        First checks for succesful completion.
+        If there are multiple etotals reported (maybe in case of sructure relaxation),
+        only the final total energy is returned.
+        Returns energy in Hartree.
+        """
+        with open('log', 'r') as log_fin:
+            log_text = log_fin.readlines()
+            # raise exception if run didn't complete
+            for line in log_text:
+                if "JOB DONE" in line:
+                    break
+            else:
+                raise NoEnergyFromDFT("This Quantum Espresso run did not complete succesfully")
+            # find final total energy
+            for line in log_text:
+                if '!    total energy' in line:
+                    etotal_line = line
+        espresso_energy_hartree = float(etotal_line.split()[4])/2.
+        return espresso_energy_hartree
 
     def _get_energy_elk(self):
         elk_energy_all_iterations = np.loadtxt('TOTENERGY.OUT')

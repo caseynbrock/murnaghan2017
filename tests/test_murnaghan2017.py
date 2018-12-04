@@ -25,7 +25,7 @@ class TemporaryDirectory(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.start_dir)
-        #shutil.rmtree(self.name)
+        shutil.rmtree(self.name)
 
 def test_angles_prim_vec_neither():
     """
@@ -116,6 +116,25 @@ def test_preprocess_file_socorro_rprim():
         # compare written socorro crystal file with correct input file
         with open(correct_file) as f1, open('crystal') as f2:
             assert f1.readlines() == f2.readlines()
+
+
+def test_preprocess_file_espresso_rprim():
+    """
+    calling _preprocess_file for espresso correctly writes scale and lattice constants to 
+    espresso input file
+    """
+    with TemporaryDirectory() as tmp_dir:
+        correct_file = os.path.join(input_dir, 'espresso.in.correct')
+        energy_driver = 'quantumespresso'
+        template_file = os.path.join(input_dir, 'espresso.in.template.example')
+        abc = [1.5, 3, 6] 
+        pvu = [[1,1,0], [0,1,1], [1,0,1]]
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        run._preprocess_file()
+        # compare written espresso input file with correct input file
+        with open(correct_file) as f1, open('espresso.in') as f2:
+            assert f1.readlines() == f2.readlines()
+
 
 def test_preprocess_file_elk_rprim():
     """
@@ -227,10 +246,45 @@ def test_get_energy_socorro_relax():
         shutil.copy(os.path.join(input_dir, 'diaryf.relax'), 'diaryf')
         E = run.get_energy()
         assert np.isclose(E, -360.361967002/2.)
-    
+ 
+def test_get_energy_espresso():
+    """read final energy from espresso output file correctly"""
+    with TemporaryDirectory() as tmp_dir:
+        energy_driver = 'quantumespresso'
+        template_file = None
+        abc = []
+        pvu = []
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        shutil.copy(os.path.join(input_dir, 'espresso.out.example'), 'log')
+        E = run.get_energy()
+        assert np.isclose(E, -4.18725738/2.)
+
+def test_get_energy_espresso_none():
+    """ raises NoEnergyFromDFT if espresso output file doesn't show completion"""
+    with TemporaryDirectory() as tmp_dir:
+        with pytest.raises(m.NoEnergyFromDFT):
+            energy_driver = 'quantumespresso'
+            template_file = None
+            abc = []
+            pvu = []
+            run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+            shutil.copy(os.path.join(input_dir, 'espresso.out.noenergy'), 'log')
+            E = run.get_energy()
+
+def test_get_energy_espresso_relax():
+    """ gets FINAL energy from espresso if relaxation was performed """
+    with TemporaryDirectory() as tmp_dir:
+        energy_driver = 'quantumespresso'
+        template_file = None
+        abc = []
+        pvu = []
+        run = m.DftRun(energy_driver, template_file, abc, prim_vec_unscaled=pvu)
+        shutil.copy(os.path.join(input_dir, 'espresso.out.relax'), 'log')
+        E = run.get_energy()
+        assert np.isclose(E, -29.22370146/2.)
     
 def test_get_energy_elk():
-    """read cell enrgy from socorro correctly"""
+    """read total energy from elk correctly"""
     with TemporaryDirectory() as tmp_dir:
         energy_driver = 'elk'
         template_file = None
@@ -240,7 +294,6 @@ def test_get_energy_elk():
         shutil.copy(os.path.join(input_dir, 'TOTENERGY.OUT.example'), 'TOTENERGY.OUT')
         E = run.get_energy()
         assert np.isclose(E, -7.51826352965)
-    
 
 def test_calc_unit_cell_volume():
     abc = [1,2,3]
@@ -508,6 +561,49 @@ def test_integration_socorro_Poly2D():
         -0.020622472, -0.001799476], atol=1e-3, rtol=0).all()
     assert np.isclose(fit.min_xy, [6.012510409, 9.725896217], atol=1e-5, rtol=0).all()
     assert np.isclose(fit.min_E, -637.080891910, atol=1e-5, rtol=0)
+
+
+def test_integration_espresso():
+    """
+    lattice paramter sweep and murnaghan fitting should run correctly
+    
+    Requires Quantum Espresso set up correctly. Also, this test is fragile because
+    different Espresso versions could calulate different energies. If this causes
+    problems in the future, either increase np.isclose tolerance or (worse) update
+    energy values to new Espresso outputs.
+    If the energy values are wrong, the murnaghan parameters will be too.
+    """
+    with TemporaryDirectory() as tmp_dir:
+        # set up example input files in temporary directory
+        os.mkdir('templatedir')
+        shutil.copy(os.path.join(input_dir, 'espresso.in.template.Si'), 
+                    os.path.join('templatedir', 'espresso.in.template'))
+        shutil.copy(os.path.join(input_dir, 'Si_pseudopotential_espresso.UPF'), 
+                    os.path.join('templatedir', 'Si.UPF'))
+        # run sweep in tmp_dir
+        energy_driver = 'quantumespresso'
+        template_file = 'espresso.in.template'
+        s = [0.9, 0.95, 1, 1.05, 1.1]
+        abc_guess = [11, 11, 11]
+        abc_list = [si*np.array(abc_guess) for si in s]
+        pvu = [[0.5,0.5,0.0], [0.0,0.5,0.5], [0.5,0.0,0.5]]
+        volumes, energy_list_hartree = m.lattice_parameter_sweep(energy_driver, template_file, abc_list, prim_vec_unscaled=pvu)
+
+        fit = m.MurnaghanFit(volumes, energy_list_hartree)
+        m.write_murnaghan_data(fit, volumes, abc_list)  # don't really need to do this
+        # assert data files written (correctly or not)
+        assert os.path.exists('energies.dat')
+        assert os.path.exists('murnaghan_parameters.dat')
+
+    # assert volumes and energies are correct
+    assert np.isclose(volumes, [242.574750000, 285.291531250, 332.750000000, 385.199718750, 442.890250000]).all()
+    assert np.isclose(energy_list_hartree, [-7.249155685, -7.313223885, -7.345433545, -7.362979705, -7.437627675]).all()
+    # assert murnaghan parameters are correct
+    assert np.isclose(fit.E0, -8.438825256, atol=1e-4, rtol=0)
+    assert np.isclose(fit.B0, 0.000167482725, atol=1e-5, rtol=0)
+    assert np.isclose(fit.BP, 0.345630525, atol=1e-2, rtol=0)
+    assert np.isclose(fit.V0, 6323.527132569, atol=1e-1, rtol=0)
+
 
 
 def test_integration_abinit():
